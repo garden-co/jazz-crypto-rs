@@ -1,4 +1,5 @@
 use crate::error::CryptoError;
+use bs58;
 use wasm_bindgen::prelude::*;
 use x25519_dalek::{PublicKey, StaticSecret};
 
@@ -42,6 +43,31 @@ pub(crate) fn x25519_diffie_hellman_internal(
 pub fn x25519_diffie_hellman(private_key: &[u8], public_key: &[u8]) -> Result<Vec<u8>, JsError> {
     x25519_diffie_hellman_internal(private_key, public_key)
         .map_err(|e| JsError::new(&e.to_string()))
+}
+
+pub(crate) fn get_sealer_id_internal(secret: &str) -> Result<String, String> {
+    if !secret.starts_with("sealerSecret_z") {
+        return Err("Invalid sealer secret format: must start with 'sealerSecret_z'".to_string());
+    }
+
+    let private_bytes = bs58::decode(&secret["sealerSecret_z".len()..])
+        .into_vec()
+        .map_err(|e| format!("Invalid base58 in secret: {:?}", e))?;
+
+    let public_bytes = x25519_public_key_internal(&private_bytes)
+        .map_err(|e| format!("Failed to get public key: {:?}", e))?;
+
+    Ok(format!(
+        "sealer_z{}",
+        bs58::encode(public_bytes).into_string()
+    ))
+}
+
+#[wasm_bindgen]
+pub fn get_sealer_id(secret: &[u8]) -> Result<String, JsError> {
+    let secret_str = std::str::from_utf8(secret)
+        .map_err(|e| JsError::new(&format!("Invalid UTF-8 in secret: {:?}", e)))?;
+    get_sealer_id_internal(secret_str).map_err(|e| JsError::new(&e))
 }
 
 #[cfg(test)]
@@ -92,5 +118,30 @@ mod tests {
         let different_shared_secret =
             x25519_diffie_hellman_internal(&sender_private, &other_recipient_public).unwrap();
         assert_ne!(shared_secret1, different_shared_secret);
+    }
+
+    #[test]
+    fn test_get_sealer_id() {
+        // Create a test private key
+        let private_key = new_x25519_private_key();
+        let secret = format!("sealerSecret_z{}", bs58::encode(&private_key).into_string());
+
+        // Get sealer ID
+        let sealer_id = get_sealer_id_internal(&secret).unwrap();
+        assert!(sealer_id.starts_with("sealer_z"));
+
+        // Test that same secret produces same ID
+        let sealer_id2 = get_sealer_id_internal(&secret).unwrap();
+        assert_eq!(sealer_id, sealer_id2);
+
+        // Test invalid secret format
+        let result = get_sealer_id_internal("invalid_secret");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Invalid sealer secret format"));
+
+        // Test invalid base58
+        let result = get_sealer_id_internal("sealerSecret_z!!!invalid!!!");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Invalid base58 in secret"));
     }
 }
