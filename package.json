@@ -1,28 +1,30 @@
 {
-  "name": "jazz-crypto-rs",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "main": "./dist/node/jazz_crypto_rs.js",
-  "browser": "./dist/web/jazz_crypto_rs.js",
-  "types": "./dist/node/jazz_crypto_rs.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/node/jazz_crypto_rs.d.ts",
-      "browser": "./dist/web/jazz_crypto_rs.js",
-      "node": "./dist/node/jazz_crypto_rs.js",
-      "default": "./dist/node/jazz_crypto_rs.js"
-    }
-  },
-  "scripts": {
-    "clean": "rm -rf dist",
-    "build": "pnpm clean && pnpm build:node && pnpm build:web",
-    "build:node": "wasm-pack build --target nodejs --out-dir dist/node",
-    "build:web": "wasm-pack build --target web --out-dir dist/web",
-    "test": "cargo test"
-  },
-  "devDependencies": {
-    "typescript": "^5.0.0",
-    "wasm-pack": "^0.13.1"
-  }
+	"name": "jazz-crypto-rs",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"main": "./dist/node/jazz_crypto_rs.js",
+	"browser": "./dist/web/jazz_crypto_rs.js",
+	"types": "./dist/node/jazz_crypto_rs.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/node/jazz_crypto_rs.d.ts",
+			"browser": "./dist/web/jazz_crypto_rs.js",
+			"node": "./dist/node/jazz_crypto_rs.js",
+			"default": "./dist/node/jazz_crypto_rs.js"
+		}
+	},
+	"scripts": {
+		"clean": "rm -rf dist",
+		"build": "pnpm clean && pnpm build:node && pnpm build:web",
+		"build:node": "wasm-pack build --target nodejs --out-dir dist/node",
+		"build:web": "wasm-pack build --target web --out-dir dist/web",
+		"test": "cargo test",
+		"changeset": "changeset"
+	},
+	"devDependencies": {
+		"@changesets/cli": "^2.27.10",
+		"typescript": "^5.0.0",
+		"wasm-pack": "^0.13.1"
+	}
 }
