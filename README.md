@@ -6,15 +6,20 @@ A Rust implementation of cryptographic primitives for the Jazz project, compiled
 
 The codebase is organized into the following modules:
 
-### Crypto Module (`src/crypto/`)
-- `error.rs` - Error types for cryptographic operations
-- `ed25519.rs` - Ed25519 signing and verification
-- `x25519.rs` - X25519 key exchange
-- `xsalsa20.rs` - XSalsa20 and XSalsa20-Poly1305 encryption/decryption
-- `mod.rs` - High-level sealing/unsealing operations
-
-### Hash Module (`src/hash/`)
-- `mod.rs` - BLAKE3 hashing functionality and nonce generation
+```
+src
+├── crypto
+│   ├── ed25519.rs // Ed25519 functions for signing and verification
+│   ├── encrypt.rs // High-level encryption functions
+│   ├── seal.rs // High-level sealing and unsealing functions
+│   ├── sign.rs // High-level signing and verification functions
+│   ├── x25519.rs // X25519 key exchange
+│   └── xsalsa20.rs // XSalsa20 and XSalsa20-Poly1305 encryption
+├── error.rs // Error types for cryptographic operations
+├── hash
+│   └── blake3.rs // BLAKE3 hashing functionality
+└── lib.rs // Main entry point for the library
+```
 
 ## Features
 
