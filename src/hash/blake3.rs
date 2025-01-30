@@ -1,6 +1,9 @@
 use wasm_bindgen::prelude::*;
 
-/// Generate a 24-byte nonce from input material using BLAKE3
+/// Generate a 24-byte nonce from input material using BLAKE3.
+/// - `nonce_material`: Raw bytes to derive the nonce from
+/// Returns 24 bytes suitable for use as a nonce in cryptographic operations.
+/// This function is deterministic - the same input will produce the same nonce.
 #[wasm_bindgen]
 pub fn generate_nonce(nonce_material: &[u8]) -> Vec<u8> {
     let mut hasher = blake3::Hasher::new();
@@ -8,7 +11,10 @@ pub fn generate_nonce(nonce_material: &[u8]) -> Vec<u8> {
     hasher.finalize().as_bytes()[..24].to_vec()
 }
 
-/// Hash data once using BLAKE3
+/// Hash data once using BLAKE3.
+/// - `data`: Raw bytes to hash
+/// Returns 32 bytes of hash output.
+/// This is the simplest way to compute a BLAKE3 hash of a single piece of data.
 #[wasm_bindgen]
 pub fn blake3_hash_once(data: &[u8]) -> Vec<u8> {
     let mut hasher = blake3::Hasher::new();
@@ -16,7 +22,11 @@ pub fn blake3_hash_once(data: &[u8]) -> Vec<u8> {
     hasher.finalize().as_bytes().to_vec()
 }
 
-/// Hash data once using BLAKE3 with a context prefix
+/// Hash data once using BLAKE3 with a context prefix.
+/// - `data`: Raw bytes to hash
+/// - `context`: Context bytes to prefix to the data
+/// Returns 32 bytes of hash output.
+/// This is useful for domain separation - the same data hashed with different contexts will produce different outputs.
 #[wasm_bindgen]
 pub fn blake3_hash_once_with_context(data: &[u8], context: &[u8]) -> Vec<u8> {
     let mut hasher = blake3::Hasher::new();
@@ -25,13 +35,19 @@ pub fn blake3_hash_once_with_context(data: &[u8], context: &[u8]) -> Vec<u8> {
     hasher.finalize().as_bytes().to_vec()
 }
 
-/// Get an empty BLAKE3 state
+/// Get an empty BLAKE3 state for incremental hashing.
+/// Returns an empty vector representing the initial state.
+/// Use this to start an incremental hashing operation.
 #[wasm_bindgen]
 pub fn blake3_empty_state() -> Vec<u8> {
     Vec::new()
 }
 
-/// Update a BLAKE3 state with new data
+/// Update a BLAKE3 state with new data for incremental hashing.
+/// - `state`: Current state from previous update or empty_state
+/// - `data`: New data to incorporate into the hash
+/// Returns updated state vector.
+/// This allows hashing data in chunks without keeping it all in memory.
 #[wasm_bindgen]
 pub fn blake3_update_state(state: &[u8], data: &[u8]) -> Vec<u8> {
     let mut all_data = Vec::new();
@@ -42,7 +58,11 @@ pub fn blake3_update_state(state: &[u8], data: &[u8]) -> Vec<u8> {
     all_data
 }
 
-/// Get the final hash from a state
+/// Get the final hash from a BLAKE3 state.
+/// - `state`: Current state from previous updates
+/// Returns 32 bytes of hash output.
+/// This finalizes an incremental hashing operation.
+/// For an empty state, returns the hash of an empty input.
 #[wasm_bindgen]
 pub fn blake3_digest_for_state(state: &[u8]) -> Vec<u8> {
     // For empty state, return hash of empty input

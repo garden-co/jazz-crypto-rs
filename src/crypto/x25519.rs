@@ -3,14 +3,18 @@ use bs58;
 use wasm_bindgen::prelude::*;
 use x25519_dalek::{PublicKey, StaticSecret};
 
-/// Generate a new X25519 private key that can be reused
+/// Generate a new X25519 private key using secure random number generation.
+/// Returns 32 bytes of raw key material suitable for use with other X25519 functions.
+/// This key can be reused for multiple Diffie-Hellman exchanges.
 #[wasm_bindgen]
 pub fn new_x25519_private_key() -> Vec<u8> {
     let secret = StaticSecret::random();
     secret.to_bytes().to_vec()
 }
 
-/// Internal pure Rust functions (no wasm_bindgen)
+/// Internal function to derive an X25519 public key from a private key.
+/// Takes 32 bytes of private key material and returns 32 bytes of public key material.
+/// Returns CryptoError if the key length is invalid.
 pub(crate) fn x25519_public_key_internal(private_key: &[u8]) -> Result<Vec<u8>, CryptoError> {
     let bytes: [u8; 32] = private_key
         .try_into()
@@ -19,11 +23,17 @@ pub(crate) fn x25519_public_key_internal(private_key: &[u8]) -> Result<Vec<u8>, 
     Ok(PublicKey::from(&secret).to_bytes().to_vec())
 }
 
+/// WASM-exposed function to derive an X25519 public key from a private key.
+/// - `private_key`: 32 bytes of private key material
+/// Returns 32 bytes of public key material or throws JsError if key is invalid.
 #[wasm_bindgen]
 pub fn x25519_public_key(private_key: &[u8]) -> Result<Vec<u8>, JsError> {
     x25519_public_key_internal(private_key).map_err(|e| JsError::new(&e.to_string()))
 }
 
+/// Internal function to perform X25519 Diffie-Hellman key exchange.
+/// Takes 32 bytes each of private and public key material.
+/// Returns 32 bytes of shared secret material or CryptoError if key lengths are invalid.
 pub(crate) fn x25519_diffie_hellman_internal(
     private_key: &[u8],
     public_key: &[u8],
@@ -39,12 +49,19 @@ pub(crate) fn x25519_diffie_hellman_internal(
     Ok(secret.diffie_hellman(&public).to_bytes().to_vec())
 }
 
+/// WASM-exposed function to perform X25519 Diffie-Hellman key exchange.
+/// - `private_key`: 32 bytes of private key material
+/// - `public_key`: 32 bytes of public key material
+/// Returns 32 bytes of shared secret material or throws JsError if key exchange fails.
 #[wasm_bindgen]
 pub fn x25519_diffie_hellman(private_key: &[u8], public_key: &[u8]) -> Result<Vec<u8>, JsError> {
     x25519_diffie_hellman_internal(private_key, public_key)
         .map_err(|e| JsError::new(&e.to_string()))
 }
 
+/// Internal function to derive a sealer ID from a sealer secret.
+/// Takes a base58-encoded sealer secret with "sealerSecret_z" prefix.
+/// Returns a base58-encoded sealer ID with "sealer_z" prefix or error string if format is invalid.
 pub(crate) fn get_sealer_id_internal(secret: &str) -> Result<String, String> {
     if !secret.starts_with("sealerSecret_z") {
         return Err("Invalid sealer secret format: must start with 'sealerSecret_z'".to_string());
@@ -63,6 +80,9 @@ pub(crate) fn get_sealer_id_internal(secret: &str) -> Result<String, String> {
     ))
 }
 
+/// WASM-exposed function to derive a sealer ID from a sealer secret.
+/// - `secret`: Raw bytes of the sealer secret
+/// Returns a base58-encoded sealer ID with "sealer_z" prefix or throws JsError if derivation fails.
 #[wasm_bindgen]
 pub fn get_sealer_id(secret: &[u8]) -> Result<String, JsError> {
     let secret_str = std::str::from_utf8(secret)

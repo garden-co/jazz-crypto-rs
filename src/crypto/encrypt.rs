@@ -3,7 +3,9 @@ use crate::hash::blake3::generate_nonce;
 use bs58;
 use wasm_bindgen::prelude::*;
 
-/// Internal function to encrypt bytes with a key secret and nonce material
+/// Internal function to encrypt bytes with a key secret and nonce material.
+/// Takes a base58-encoded key secret with "keySecret_z" prefix and raw nonce material.
+/// Returns the encrypted bytes or a CryptoError if the key format is invalid.
 fn encrypt_internal(
     plaintext: &[u8],
     key_secret: &str,
@@ -24,7 +26,9 @@ fn encrypt_internal(
     super::xsalsa20::encrypt_xsalsa20_raw_internal(&key, &nonce, plaintext)
 }
 
-/// Internal function to decrypt bytes with a key secret and nonce material
+/// Internal function to decrypt bytes with a key secret and nonce material.
+/// Takes a base58-encoded key secret with "keySecret_z" prefix and raw nonce material.
+/// Returns the decrypted bytes or a CryptoError if the key format is invalid.
 fn decrypt_internal(
     ciphertext: &[u8],
     key_secret: &str,
@@ -45,13 +49,21 @@ fn decrypt_internal(
     super::xsalsa20::decrypt_xsalsa20_raw_internal(&key, &nonce, ciphertext)
 }
 
-/// Encrypt bytes with a key secret and nonce material
+/// WASM-exposed function to encrypt bytes with a key secret and nonce material.
+/// - `value`: The raw bytes to encrypt
+/// - `key_secret`: A base58-encoded key secret with "keySecret_z" prefix
+/// - `nonce_material`: Raw bytes used to generate the nonce
+/// Returns the encrypted bytes or throws a JsError if encryption fails.
 #[wasm_bindgen(js_name = encrypt)]
 pub fn encrypt(value: &[u8], key_secret: &str, nonce_material: &[u8]) -> Result<Vec<u8>, JsError> {
     encrypt_internal(value, key_secret, nonce_material).map_err(|e| JsError::new(&e.to_string()))
 }
 
-/// Decrypt bytes with a key secret and nonce material
+/// WASM-exposed function to decrypt bytes with a key secret and nonce material.
+/// - `ciphertext`: The encrypted bytes to decrypt
+/// - `key_secret`: A base58-encoded key secret with "keySecret_z" prefix
+/// - `nonce_material`: Raw bytes used to generate the nonce (must match encryption)
+/// Returns the decrypted bytes or throws a JsError if decryption fails.
 #[wasm_bindgen(js_name = decrypt)]
 pub fn decrypt(
     ciphertext: &[u8],

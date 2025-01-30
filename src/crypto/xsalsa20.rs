@@ -8,7 +8,12 @@ use salsa20::cipher::{KeyIvInit, StreamCipher};
 use salsa20::XSalsa20;
 use wasm_bindgen::prelude::*;
 
-/// XSalsa20 encryption without authentication
+/// WASM-exposed function for XSalsa20 encryption without authentication.
+/// - `key`: 32-byte key for encryption
+/// - `nonce_material`: Raw bytes used to generate a 24-byte nonce via BLAKE3
+/// - `plaintext`: Raw bytes to encrypt
+/// Returns the encrypted bytes or throws a JsError if encryption fails.
+/// Note: This function does not provide authentication. Use encrypt_xsalsa20_poly1305 for authenticated encryption.
 #[wasm_bindgen]
 pub fn encrypt_xsalsa20(
     key: &[u8],
@@ -19,7 +24,12 @@ pub fn encrypt_xsalsa20(
     encrypt_xsalsa20_raw_internal(key, &nonce, plaintext).map_err(|e| JsError::new(&e.to_string()))
 }
 
-/// XSalsa20 decryption without authentication
+/// WASM-exposed function for XSalsa20 decryption without authentication.
+/// - `key`: 32-byte key for decryption (must match encryption key)
+/// - `nonce_material`: Raw bytes used to generate a 24-byte nonce (must match encryption)
+/// - `ciphertext`: Encrypted bytes to decrypt
+/// Returns the decrypted bytes or throws a JsError if decryption fails.
+/// Note: This function does not provide authentication. Use decrypt_xsalsa20_poly1305 for authenticated decryption.
 #[wasm_bindgen]
 pub fn decrypt_xsalsa20(
     key: &[u8],
@@ -30,7 +40,9 @@ pub fn decrypt_xsalsa20(
     decrypt_xsalsa20_raw_internal(key, &nonce, ciphertext).map_err(|e| JsError::new(&e.to_string()))
 }
 
-/// Internal function for raw XSalsa20 encryption without nonce generation
+/// Internal function for raw XSalsa20 encryption without nonce generation.
+/// Takes a 32-byte key and 24-byte nonce directly.
+/// Returns encrypted bytes or CryptoError if key/nonce lengths are invalid.
 pub(crate) fn encrypt_xsalsa20_raw_internal(
     key: &[u8],
     nonce: &[u8],
@@ -51,7 +63,9 @@ pub(crate) fn encrypt_xsalsa20_raw_internal(
     Ok(buffer)
 }
 
-/// Internal function for raw XSalsa20 decryption without nonce generation
+/// Internal function for raw XSalsa20 decryption without nonce generation.
+/// Takes a 32-byte key and 24-byte nonce directly.
+/// Returns decrypted bytes or CryptoError if key/nonce lengths are invalid.
 pub(crate) fn decrypt_xsalsa20_raw_internal(
     key: &[u8],
     nonce: &[u8],

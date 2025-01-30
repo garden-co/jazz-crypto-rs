@@ -5,7 +5,18 @@ use crate::hash::blake3::generate_nonce;
 use bs58;
 use wasm_bindgen::prelude::*;
 
-/// Internal function to seal a message using X25519 + XSalsa20-Poly1305
+/// Internal function to seal a message using X25519 + XSalsa20-Poly1305.
+/// - `message`: Raw bytes to seal
+/// - `sender_secret`: Base58-encoded sender's private key with "sealerSecret_z" prefix
+/// - `recipient_id`: Base58-encoded recipient's public key with "sealer_z" prefix
+/// - `nonce_material`: Raw bytes used to generate the nonce
+/// Returns sealed bytes or CryptoError if key formats are invalid.
+///
+/// The sealing process:
+/// 1. Decode base58 keys and validate prefixes
+/// 2. Generate shared secret using X25519 key exchange
+/// 3. Generate nonce from nonce material using BLAKE3
+/// 4. Encrypt message using XSalsa20-Poly1305 with the shared secret
 fn seal_internal(
     message: &[u8],
     sender_secret: &str,
@@ -37,7 +48,18 @@ fn seal_internal(
     encrypt_xsalsa20_poly1305(&shared_secret, &nonce, message)
 }
 
-/// Internal function to unseal a message using X25519 + XSalsa20-Poly1305
+/// Internal function to unseal a message using X25519 + XSalsa20-Poly1305.
+/// - `sealed_message`: The sealed bytes to decrypt
+/// - `recipient_secret`: Base58-encoded recipient's private key with "sealerSecret_z" prefix
+/// - `sender_id`: Base58-encoded sender's public key with "sealer_z" prefix
+/// - `nonce_material`: Raw bytes used to generate the nonce (must match sealing)
+/// Returns unsealed bytes or CryptoError if key formats are invalid or authentication fails.
+///
+/// The unsealing process:
+/// 1. Decode base58 keys and validate prefixes
+/// 2. Generate shared secret using X25519 key exchange
+/// 3. Generate nonce from nonce material using BLAKE3
+/// 4. Decrypt and authenticate message using XSalsa20-Poly1305 with the shared secret
 fn unseal_internal(
     sealed_message: &[u8],
     recipient_secret: &str,
@@ -69,7 +91,13 @@ fn unseal_internal(
     decrypt_xsalsa20_poly1305(&shared_secret, &nonce, sealed_message)
 }
 
-/// WASM-exposed function for sealing a message using X25519 + XSalsa20-Poly1305
+/// WASM-exposed function for sealing a message using X25519 + XSalsa20-Poly1305.
+/// Provides authenticated encryption with perfect forward secrecy.
+/// - `message`: Raw bytes to seal
+/// - `sender_secret`: Base58-encoded sender's private key with "sealerSecret_z" prefix
+/// - `recipient_id`: Base58-encoded recipient's public key with "sealer_z" prefix
+/// - `nonce_material`: Raw bytes used to generate the nonce
+/// Returns sealed bytes or throws JsError if sealing fails.
 #[wasm_bindgen(js_name = seal)]
 pub fn seal(
     message: &[u8],
@@ -81,7 +109,13 @@ pub fn seal(
         .map_err(|e| JsError::new(&e.to_string()))
 }
 
-/// WASM-exposed function for unsealing a message using X25519 + XSalsa20-Poly1305
+/// WASM-exposed function for unsealing a message using X25519 + XSalsa20-Poly1305.
+/// Provides authenticated decryption with perfect forward secrecy.
+/// - `sealed_message`: The sealed bytes to decrypt
+/// - `recipient_secret`: Base58-encoded recipient's private key with "sealerSecret_z" prefix
+/// - `sender_id`: Base58-encoded sender's public key with "sealer_z" prefix
+/// - `nonce_material`: Raw bytes used to generate the nonce (must match sealing)
+/// Returns unsealed bytes or throws JsError if unsealing fails.
 #[wasm_bindgen(js_name = unseal)]
 pub fn unseal(
     sealed_message: &[u8],

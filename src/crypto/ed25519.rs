@@ -3,7 +3,8 @@ use ed25519_dalek::{Signer, SigningKey, Verifier, VerifyingKey};
 use rand::rngs::OsRng;
 use wasm_bindgen::prelude::*;
 
-/// Generate a new Ed25519 signing key
+/// Generate a new Ed25519 signing key using secure random number generation.
+/// Returns 32 bytes of raw key material suitable for use with other Ed25519 functions.
 #[wasm_bindgen]
 pub fn new_ed25519_signing_key() -> Vec<u8> {
     let mut rng = OsRng;
@@ -11,6 +12,9 @@ pub fn new_ed25519_signing_key() -> Vec<u8> {
     signing_key.to_bytes().to_vec()
 }
 
+/// Internal function to derive an Ed25519 verifying key from a signing key.
+/// Takes 32 bytes of signing key material and returns 32 bytes of verifying key material.
+/// Returns CryptoError if the key length is invalid.
 pub(crate) fn ed25519_verifying_key_internal(signing_key: &[u8]) -> Result<Vec<u8>, CryptoError> {
     let key_bytes: [u8; 32] = signing_key
         .try_into()
@@ -19,11 +23,17 @@ pub(crate) fn ed25519_verifying_key_internal(signing_key: &[u8]) -> Result<Vec<u
     Ok(signing_key.verifying_key().to_bytes().to_vec())
 }
 
+/// WASM-exposed function to derive an Ed25519 verifying key from a signing key.
+/// - `signing_key`: 32 bytes of signing key material
+/// Returns 32 bytes of verifying key material or throws JsError if key is invalid.
 #[wasm_bindgen]
 pub fn ed25519_verifying_key(signing_key: &[u8]) -> Result<Vec<u8>, JsError> {
     ed25519_verifying_key_internal(signing_key).map_err(|e| JsError::new(&e.to_string()))
 }
 
+/// Internal function to sign a message using Ed25519.
+/// Takes 32 bytes of signing key material and arbitrary message bytes.
+/// Returns 64 bytes of signature material or CryptoError if key is invalid.
 pub(crate) fn ed25519_sign_internal(
     signing_key: &[u8],
     message: &[u8],
@@ -35,11 +45,20 @@ pub(crate) fn ed25519_sign_internal(
     Ok(signing_key.sign(message).to_bytes().to_vec())
 }
 
+/// WASM-exposed function to sign a message using Ed25519.
+/// - `signing_key`: 32 bytes of signing key material
+/// - `message`: Raw bytes to sign
+/// Returns 64 bytes of signature material or throws JsError if signing fails.
 #[wasm_bindgen]
 pub fn ed25519_sign(signing_key: &[u8], message: &[u8]) -> Result<Vec<u8>, JsError> {
     ed25519_sign_internal(signing_key, message).map_err(|e| JsError::new(&e.to_string()))
 }
 
+/// Internal function to verify an Ed25519 signature.
+/// - `verifying_key`: 32 bytes of verifying key material
+/// - `message`: Raw bytes that were signed
+/// - `signature`: 64 bytes of signature material
+/// Returns true if signature is valid, false otherwise, or CryptoError if key/signature format is invalid.
 pub(crate) fn ed25519_verify_internal(
     verifying_key: &[u8],
     message: &[u8],
@@ -59,6 +78,11 @@ pub(crate) fn ed25519_verify_internal(
     Ok(verifying_key.verify(message, &signature).is_ok())
 }
 
+/// WASM-exposed function to verify an Ed25519 signature.
+/// - `verifying_key`: 32 bytes of verifying key material
+/// - `message`: Raw bytes that were signed
+/// - `signature`: 64 bytes of signature material
+/// Returns true if signature is valid, false otherwise, or throws JsError if verification fails.
 #[wasm_bindgen]
 pub fn ed25519_verify(
     verifying_key: &[u8],
@@ -69,6 +93,9 @@ pub fn ed25519_verify(
         .map_err(|e| JsError::new(&e.to_string()))
 }
 
+/// WASM-exposed function to validate and copy Ed25519 signing key bytes.
+/// - `bytes`: 32 bytes of signing key material to validate
+/// Returns the same 32 bytes if valid or throws JsError if invalid.
 #[wasm_bindgen]
 pub fn ed25519_signing_key_from_bytes(bytes: &[u8]) -> Result<Vec<u8>, JsError> {
     let key_bytes: [u8; 32] = bytes
@@ -77,16 +104,26 @@ pub fn ed25519_signing_key_from_bytes(bytes: &[u8]) -> Result<Vec<u8>, JsError> 
     Ok(key_bytes.to_vec())
 }
 
+/// WASM-exposed function to derive the public key from an Ed25519 signing key.
+/// - `signing_key`: 32 bytes of signing key material
+/// Returns 32 bytes of public key material or throws JsError if key is invalid.
 #[wasm_bindgen]
 pub fn ed25519_signing_key_to_public(signing_key: &[u8]) -> Result<Vec<u8>, JsError> {
     ed25519_verifying_key_internal(signing_key).map_err(|e| JsError::new(&e.to_string()))
 }
 
+/// WASM-exposed function to sign a message with an Ed25519 signing key.
+/// - `signing_key`: 32 bytes of signing key material
+/// - `message`: Raw bytes to sign
+/// Returns 64 bytes of signature material or throws JsError if signing fails.
 #[wasm_bindgen]
 pub fn ed25519_signing_key_sign(signing_key: &[u8], message: &[u8]) -> Result<Vec<u8>, JsError> {
     ed25519_sign_internal(signing_key, message).map_err(|e| JsError::new(&e.to_string()))
 }
 
+/// WASM-exposed function to validate and copy Ed25519 verifying key bytes.
+/// - `bytes`: 32 bytes of verifying key material to validate
+/// Returns the same 32 bytes if valid or throws JsError if invalid.
 #[wasm_bindgen]
 pub fn ed25519_verifying_key_from_bytes(bytes: &[u8]) -> Result<Vec<u8>, JsError> {
     let key_bytes: [u8; 32] = bytes
@@ -95,6 +132,9 @@ pub fn ed25519_verifying_key_from_bytes(bytes: &[u8]) -> Result<Vec<u8>, JsError
     Ok(key_bytes.to_vec())
 }
 
+/// WASM-exposed function to validate and copy Ed25519 signature bytes.
+/// - `bytes`: 64 bytes of signature material to validate
+/// Returns the same 64 bytes if valid or throws JsError if invalid.
 #[wasm_bindgen]
 pub fn ed25519_signature_from_bytes(bytes: &[u8]) -> Result<Vec<u8>, JsError> {
     let sig_bytes: [u8; 64] = bytes

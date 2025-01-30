@@ -4,7 +4,10 @@ use crate::crypto::ed25519::{
 use bs58;
 use wasm_bindgen::prelude::*;
 
-// Internal implementation
+/// Internal function to sign a message using Ed25519.
+/// - `message`: Raw bytes to sign
+/// - `secret`: Base58-encoded signing key with "signerSecret_z" prefix
+/// Returns base58-encoded signature with "signature_z" prefix or error string.
 pub(crate) fn sign_internal(message: &[u8], secret: &str) -> Result<String, String> {
     let secret_bytes = bs58::decode(&secret["signerSecret_z".len()..])
         .into_vec()
@@ -18,6 +21,11 @@ pub(crate) fn sign_internal(message: &[u8], secret: &str) -> Result<String, Stri
     ))
 }
 
+/// Internal function to verify an Ed25519 signature.
+/// - `signature`: Base58-encoded signature with "signature_z" prefix
+/// - `message`: Raw bytes that were signed
+/// - `id`: Base58-encoded verifying key with "signer_z" prefix
+/// Returns true if signature is valid, false otherwise, or error string if formats are invalid.
 pub(crate) fn verify_internal(signature: &str, message: &[u8], id: &str) -> Result<bool, String> {
     if !signature.starts_with("signature_z") {
         return Err("Invalid signature format: must start with 'signature_z'".to_string());
@@ -38,6 +46,9 @@ pub(crate) fn verify_internal(signature: &str, message: &[u8], id: &str) -> Resu
         .map_err(|e| format!("Verification failed: {:?}", e))
 }
 
+/// Internal function to derive a signer ID from a signing key.
+/// - `secret`: Base58-encoded signing key with "signerSecret_z" prefix
+/// Returns base58-encoded verifying key with "signer_z" prefix or error string.
 pub(crate) fn get_signer_id_internal(secret: &str) -> Result<String, String> {
     if !secret.starts_with("signerSecret_z") {
         return Err("Invalid signer secret format: must start with 'signerSecret_z'".to_string());
@@ -56,15 +67,23 @@ pub(crate) fn get_signer_id_internal(secret: &str) -> Result<String, String> {
     ))
 }
 
-// Wasm-bindgen wrappers
-#[wasm_bindgen]
+/// WASM-exposed function to sign a message using Ed25519.
+/// - `message`: Raw bytes to sign
+/// - `secret`: Raw Ed25519 signing key bytes
+/// Returns base58-encoded signature with "signature_z" prefix or throws JsError if signing fails.
+#[wasm_bindgen(js_name = sign)]
 pub fn sign(message: &[u8], secret: &[u8]) -> Result<String, JsError> {
     let secret_str = std::str::from_utf8(secret)
         .map_err(|e| JsError::new(&format!("Invalid UTF-8 in secret: {:?}", e)))?;
     sign_internal(message, secret_str).map_err(|e| JsError::new(&e))
 }
 
-#[wasm_bindgen]
+/// WASM-exposed function to verify an Ed25519 signature.
+/// - `signature`: Raw signature bytes
+/// - `message`: Raw bytes that were signed
+/// - `id`: Raw Ed25519 verifying key bytes
+/// Returns true if signature is valid, false otherwise, or throws JsError if verification fails.
+#[wasm_bindgen(js_name = verify)]
 pub fn verify(signature: &[u8], message: &[u8], id: &[u8]) -> Result<bool, JsError> {
     let signature_str = std::str::from_utf8(signature)
         .map_err(|e| JsError::new(&format!("Invalid UTF-8 in signature: {:?}", e)))?;
@@ -73,7 +92,10 @@ pub fn verify(signature: &[u8], message: &[u8], id: &[u8]) -> Result<bool, JsErr
     verify_internal(signature_str, message, id_str).map_err(|e| JsError::new(&e))
 }
 
-#[wasm_bindgen]
+/// WASM-exposed function to derive a signer ID from a signing key.
+/// - `secret`: Raw Ed25519 signing key bytes
+/// Returns base58-encoded verifying key with "signer_z" prefix or throws JsError if derivation fails.
+#[wasm_bindgen(js_name = get_signer_id)]
 pub fn get_signer_id(secret: &[u8]) -> Result<String, JsError> {
     let secret_str = std::str::from_utf8(secret)
         .map_err(|e| JsError::new(&format!("Invalid UTF-8 in secret: {:?}", e)))?;
