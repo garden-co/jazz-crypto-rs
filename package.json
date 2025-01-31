@@ -1,6 +1,6 @@
 {
 	"name": "jazz-crypto-rs",
-	"version": "0.0.0",
+	"version": "0.0.1-rc.4",
 	"type": "module",
 	"main": "./dist/node/jazz_crypto_rs.js",
 	"browser": "./dist/web/jazz_crypto_rs.js",
@@ -16,10 +16,11 @@
 	"scripts": {
 		"clean": "rm -rf dist",
 		"build": "pnpm clean && pnpm build:node && pnpm build:web",
-		"build:node": "wasm-pack build --target nodejs --out-dir dist/node",
-		"build:web": "wasm-pack build --target web --out-dir dist/web",
+		"build:node": "wasm-pack build --release --target nodejs --out-dir dist/node",
+		"build:web": "wasm-pack build --release --target web --out-dir dist/web",
 		"test": "cargo test",
-		"changeset": "changeset"
+		"changeset": "changeset",
+		"postbuild": "rm -f dist/**/.gitignore"
 	},
 	"devDependencies": {
 		"@changesets/cli": "^2.27.10",

@@ -23,3 +23,6 @@ bs58 = "0.5"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
+
+[profile.release]
+lto = true
