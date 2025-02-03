@@ -35,42 +35,53 @@ pub fn blake3_hash_once_with_context(data: &[u8], context: &[u8]) -> Box<[u8]> {
     hasher.finalize().as_bytes().to_vec().into_boxed_slice()
 }
 
-/// Get an empty BLAKE3 state for incremental hashing.
-/// Returns an empty vector representing the initial state.
-/// Use this to start an incremental hashing operation.
 #[wasm_bindgen]
-pub fn blake3_empty_state() -> Vec<u8> {
-    Vec::new()
+pub struct Blake3Hasher(blake3::Hasher);
+
+#[wasm_bindgen]
+impl Blake3Hasher {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        Blake3Hasher(blake3::Hasher::new())
+    }
+
+    pub fn update(&mut self, data: &[u8]) {
+        self.0.update(data);
+    }
+
+    pub fn finalize(&self) -> Box<[u8]> {
+        self.0.finalize().as_bytes().to_vec().into_boxed_slice()
+    }
+
+    pub fn clone(&self) -> Self {
+        // The blake3::Hasher type implements Clone
+        Blake3Hasher(self.0.clone())
+    }
+}
+
+/// Get an empty BLAKE3 state for incremental hashing.
+/// Returns a new Blake3Hasher instance for incremental hashing.
+#[wasm_bindgen]
+pub fn blake3_empty_state() -> Blake3Hasher {
+    Blake3Hasher::new()
 }
 
 /// Update a BLAKE3 state with new data for incremental hashing.
-/// - `state`: Current state from previous update or empty_state
+/// - `state`: Current Blake3Hasher instance
 /// - `data`: New data to incorporate into the hash
-/// Returns updated state vector.
-/// This allows hashing data in chunks without keeping it all in memory.
+/// Returns the updated Blake3Hasher.
 #[wasm_bindgen]
-pub fn blake3_update_state(state: &[u8], data: &[u8]) -> Box<[u8]> {
-    let mut all_data = Vec::new();
-    if !state.is_empty() {
-        all_data.extend_from_slice(state);
-    }
-    all_data.extend_from_slice(data);
-    all_data.into_boxed_slice()
+pub fn blake3_update_state(state: &mut Blake3Hasher, data: &[u8]) {
+    state.update(data);
 }
 
 /// Get the final hash from a BLAKE3 state.
-/// - `state`: Current state from previous updates
+/// - `state`: The Blake3Hasher to finalize
 /// Returns 32 bytes of hash output.
 /// This finalizes an incremental hashing operation.
-/// For an empty state, returns the hash of an empty input.
 #[wasm_bindgen]
-pub fn blake3_digest_for_state(state: &[u8]) -> Box<[u8]> {
-    // For empty state, return hash of empty input
-    if state.is_empty() {
-        return blake3_hash_once(&[]);
-    }
-    // For non-empty state, hash the accumulated data
-    blake3_hash_once(state)
+pub fn blake3_digest_for_state(state: Blake3Hasher) -> Box<[u8]> {
+    state.finalize()
 }
 
 #[cfg(test)]
@@ -138,21 +149,23 @@ mod tests {
     #[test]
     fn test_blake3_incremental() {
         // Initial state
-        let state = blake3_empty_state();
-        assert!(state.is_empty(), "Initial state should be empty");
+        let mut state = blake3_empty_state();
 
         // First update with [1,2,3,4,5]
         let data1 = &[1u8, 2, 3, 4, 5];
-        let state2 = blake3_update_state(&state, data1);
-        assert_eq!(&*state2, data1, "Updated state should contain first chunk");
+        blake3_update_state(&mut state, data1);
 
         // Check that this matches a direct hash
         let direct_hash = blake3_hash_once(data1);
+        let state_hash = state.finalize();
         assert_eq!(
-            blake3_digest_for_state(&state2),
-            direct_hash,
+            state_hash, direct_hash,
             "First update should match direct hash"
         );
+
+        // Create new state for second test
+        let mut state = blake3_empty_state();
+        blake3_update_state(&mut state, data1);
 
         // Verify the exact expected hash from the TypeScript test for the first update
         let expected_first_hash = [
@@ -162,29 +175,34 @@ mod tests {
         .to_vec()
         .into_boxed_slice();
         assert_eq!(
-            blake3_digest_for_state(&state2),
+            state.finalize(),
             expected_first_hash,
             "First update should match expected hash"
         );
 
-        // Second update with [6,7,8,9,10]
+        // Test with two updates
+        let mut state = blake3_empty_state();
+        let data1 = &[1u8, 2, 3, 4, 5];
         let data2 = &[6u8, 7, 8, 9, 10];
-        let state3 = blake3_update_state(&state2, data2);
+        blake3_update_state(&mut state, data1);
+        blake3_update_state(&mut state, data2);
 
         // Compare with a single hash of all data
         let mut all_data = Vec::new();
         all_data.extend_from_slice(data1);
         all_data.extend_from_slice(data2);
-        assert_eq!(&*state3, all_data, "Final state should contain all data");
-
         let direct_hash_all = blake3_hash_once(&all_data);
         assert_eq!(
-            blake3_digest_for_state(&state3),
+            state.finalize(),
             direct_hash_all,
             "Final state should match direct hash of all data"
         );
 
-        // Also verify the exact expected hash from the TypeScript test for the final state
+        // Test final hash matches expected value
+        let mut state = blake3_empty_state();
+        blake3_update_state(&mut state, data1);
+        blake3_update_state(&mut state, data2);
+
         let expected_final_hash = [
             165, 131, 141, 69, 2, 69, 39, 236, 196, 244, 180, 213, 147, 124, 222, 39, 68, 223, 54,
             176, 242, 97, 200, 101, 204, 79, 21, 233, 56, 51, 1, 199,
@@ -192,7 +210,7 @@ mod tests {
         .to_vec()
         .into_boxed_slice();
         assert_eq!(
-            blake3_digest_for_state(&state3),
+            state.finalize(),
             expected_final_hash,
             "Final state should match expected hash"
         );
