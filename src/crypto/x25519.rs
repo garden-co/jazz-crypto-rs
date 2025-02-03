@@ -7,27 +7,27 @@ use x25519_dalek::{PublicKey, StaticSecret};
 /// Returns 32 bytes of raw key material suitable for use with other X25519 functions.
 /// This key can be reused for multiple Diffie-Hellman exchanges.
 #[wasm_bindgen]
-pub fn new_x25519_private_key() -> Vec<u8> {
+pub fn new_x25519_private_key() -> Box<[u8]> {
     let secret = StaticSecret::random();
-    secret.to_bytes().to_vec()
+    secret.to_bytes().into()
 }
 
 /// Internal function to derive an X25519 public key from a private key.
 /// Takes 32 bytes of private key material and returns 32 bytes of public key material.
 /// Returns CryptoError if the key length is invalid.
-pub(crate) fn x25519_public_key_internal(private_key: &[u8]) -> Result<Vec<u8>, CryptoError> {
+pub(crate) fn x25519_public_key_internal(private_key: &[u8]) -> Result<Box<[u8]>, CryptoError> {
     let bytes: [u8; 32] = private_key
         .try_into()
         .map_err(|_| CryptoError::InvalidKeyLength)?;
     let secret = StaticSecret::from(bytes);
-    Ok(PublicKey::from(&secret).to_bytes().to_vec())
+    Ok(PublicKey::from(&secret).to_bytes().into())
 }
 
 /// WASM-exposed function to derive an X25519 public key from a private key.
 /// - `private_key`: 32 bytes of private key material
 /// Returns 32 bytes of public key material or throws JsError if key is invalid.
 #[wasm_bindgen]
-pub fn x25519_public_key(private_key: &[u8]) -> Result<Vec<u8>, JsError> {
+pub fn x25519_public_key(private_key: &[u8]) -> Result<Box<[u8]>, JsError> {
     x25519_public_key_internal(private_key).map_err(|e| JsError::new(&e.to_string()))
 }
 
@@ -37,7 +37,7 @@ pub fn x25519_public_key(private_key: &[u8]) -> Result<Vec<u8>, JsError> {
 pub(crate) fn x25519_diffie_hellman_internal(
     private_key: &[u8],
     public_key: &[u8],
-) -> Result<Vec<u8>, CryptoError> {
+) -> Result<Box<[u8]>, CryptoError> {
     let private_bytes: [u8; 32] = private_key
         .try_into()
         .map_err(|_| CryptoError::InvalidKeyLength)?;
@@ -46,7 +46,7 @@ pub(crate) fn x25519_diffie_hellman_internal(
         .map_err(|_| CryptoError::InvalidKeyLength)?;
     let secret = StaticSecret::from(private_bytes);
     let public = PublicKey::from(public_bytes);
-    Ok(secret.diffie_hellman(&public).to_bytes().to_vec())
+    Ok(secret.diffie_hellman(&public).to_bytes().into())
 }
 
 /// WASM-exposed function to perform X25519 Diffie-Hellman key exchange.
@@ -54,7 +54,7 @@ pub(crate) fn x25519_diffie_hellman_internal(
 /// - `public_key`: 32 bytes of public key material
 /// Returns 32 bytes of shared secret material or throws JsError if key exchange fails.
 #[wasm_bindgen]
-pub fn x25519_diffie_hellman(private_key: &[u8], public_key: &[u8]) -> Result<Vec<u8>, JsError> {
+pub fn x25519_diffie_hellman(private_key: &[u8], public_key: &[u8]) -> Result<Box<[u8]>, JsError> {
     x25519_diffie_hellman_internal(private_key, public_key)
         .map_err(|e| JsError::new(&e.to_string()))
 }

@@ -5,10 +5,10 @@ use wasm_bindgen::prelude::*;
 /// Returns 24 bytes suitable for use as a nonce in cryptographic operations.
 /// This function is deterministic - the same input will produce the same nonce.
 #[wasm_bindgen]
-pub fn generate_nonce(nonce_material: &[u8]) -> Vec<u8> {
+pub fn generate_nonce(nonce_material: &[u8]) -> Box<[u8]> {
     let mut hasher = blake3::Hasher::new();
     hasher.update(nonce_material);
-    hasher.finalize().as_bytes()[..24].to_vec()
+    hasher.finalize().as_bytes()[..24].into()
 }
 
 /// Hash data once using BLAKE3.
@@ -16,10 +16,10 @@ pub fn generate_nonce(nonce_material: &[u8]) -> Vec<u8> {
 /// Returns 32 bytes of hash output.
 /// This is the simplest way to compute a BLAKE3 hash of a single piece of data.
 #[wasm_bindgen]
-pub fn blake3_hash_once(data: &[u8]) -> Vec<u8> {
+pub fn blake3_hash_once(data: &[u8]) -> Box<[u8]> {
     let mut hasher = blake3::Hasher::new();
     hasher.update(data);
-    hasher.finalize().as_bytes().to_vec()
+    hasher.finalize().as_bytes().to_vec().into_boxed_slice()
 }
 
 /// Hash data once using BLAKE3 with a context prefix.
@@ -28,11 +28,11 @@ pub fn blake3_hash_once(data: &[u8]) -> Vec<u8> {
 /// Returns 32 bytes of hash output.
 /// This is useful for domain separation - the same data hashed with different contexts will produce different outputs.
 #[wasm_bindgen]
-pub fn blake3_hash_once_with_context(data: &[u8], context: &[u8]) -> Vec<u8> {
+pub fn blake3_hash_once_with_context(data: &[u8], context: &[u8]) -> Box<[u8]> {
     let mut hasher = blake3::Hasher::new();
     hasher.update(context);
     hasher.update(data);
-    hasher.finalize().as_bytes().to_vec()
+    hasher.finalize().as_bytes().to_vec().into_boxed_slice()
 }
 
 /// Get an empty BLAKE3 state for incremental hashing.
@@ -64,7 +64,7 @@ pub fn blake3_update_state(state: &[u8], data: &[u8]) -> Vec<u8> {
 /// This finalizes an incremental hashing operation.
 /// For an empty state, returns the hash of an empty input.
 #[wasm_bindgen]
-pub fn blake3_digest_for_state(state: &[u8]) -> Vec<u8> {
+pub fn blake3_digest_for_state(state: &[u8]) -> Box<[u8]> {
     // For empty state, return hash of empty input
     if state.is_empty() {
         return blake3_hash_once(&[]);
@@ -158,7 +158,9 @@ mod tests {
         let expected_first_hash = [
             2, 79, 103, 192, 66, 90, 61, 192, 47, 186, 245, 140, 185, 61, 229, 19, 46, 61, 117,
             197, 25, 250, 160, 186, 218, 33, 73, 29, 136, 201, 112, 87,
-        ];
+        ]
+        .to_vec()
+        .into_boxed_slice();
         assert_eq!(
             blake3_digest_for_state(&state2),
             expected_first_hash,
@@ -186,7 +188,9 @@ mod tests {
         let expected_final_hash = [
             165, 131, 141, 69, 2, 69, 39, 236, 196, 244, 180, 213, 147, 124, 222, 39, 68, 223, 54,
             176, 242, 97, 200, 101, 204, 79, 21, 233, 56, 51, 1, 199,
-        ];
+        ]
+        .to_vec()
+        .into_boxed_slice();
         assert_eq!(
             blake3_digest_for_state(&state3),
             expected_final_hash,
