@@ -1,6 +1,7 @@
 use crate::crypto::ed25519::{
     ed25519_sign_internal, ed25519_verify_internal, ed25519_verifying_key_internal,
 };
+use crate::error::CryptoError;
 use bs58;
 use wasm_bindgen::prelude::*;
 
@@ -8,13 +9,15 @@ use wasm_bindgen::prelude::*;
 /// - `message`: Raw bytes to sign
 /// - `secret`: Base58-encoded signing key with "signerSecret_z" prefix
 /// Returns base58-encoded signature with "signature_z" prefix or error string.
-pub(crate) fn sign_internal(message: &[u8], secret: &str) -> Result<String, String> {
-    let secret_bytes = bs58::decode(&secret["signerSecret_z".len()..])
-        .into_vec()
-        .map_err(|e| format!("Invalid base58 in secret: {:?}", e))?;
+pub(crate) fn sign_internal(message: &[u8], secret: &str) -> Result<String, CryptoError> {
+    let secret_bytes = bs58::decode(secret.strip_prefix("signerSecret_z").ok_or(
+        CryptoError::InvalidPrefix("signerSecret_z", "signer secret"),
+    )?)
+    .into_vec()
+    .map_err(|e| CryptoError::Base58Error(e.to_string()))?;
 
     let signature = ed25519_sign_internal(&secret_bytes, message)
-        .map_err(|e| format!("Signing failed: {:?}", e))?;
+        .map_err(|e| CryptoError::InvalidVerifyingKey(e.to_string()))?;
     Ok(format!(
         "signature_z{}",
         bs58::encode(signature).into_string()
@@ -26,40 +29,42 @@ pub(crate) fn sign_internal(message: &[u8], secret: &str) -> Result<String, Stri
 /// - `message`: Raw bytes that were signed
 /// - `id`: Base58-encoded verifying key with "signer_z" prefix
 /// Returns true if signature is valid, false otherwise, or error string if formats are invalid.
-pub(crate) fn verify_internal(signature: &str, message: &[u8], id: &str) -> Result<bool, String> {
-    if !signature.starts_with("signature_z") {
-        return Err("Invalid signature format: must start with 'signature_z'".to_string());
-    }
-    if !id.starts_with("signer_z") {
-        return Err("Invalid signer ID format: must start with 'signer_z'".to_string());
-    }
+pub(crate) fn verify_internal(
+    signature: &str,
+    message: &[u8],
+    id: &str,
+) -> Result<bool, CryptoError> {
+    let signature_bytes = bs58::decode(
+        signature
+            .strip_prefix("signature_z")
+            .ok_or(CryptoError::InvalidPrefix("signature_z", "signature"))?,
+    )
+    .into_vec()
+    .map_err(|e| CryptoError::Base58Error(e.to_string()))?;
 
-    let verifying_key = bs58::decode(&id["signer_z".len()..])
-        .into_vec()
-        .map_err(|e| format!("Invalid base58 in id: {:?}", e))?;
-
-    let signature_bytes = bs58::decode(&signature["signature_z".len()..])
-        .into_vec()
-        .map_err(|e| format!("Invalid base58 in signature: {:?}", e))?;
+    let verifying_key = bs58::decode(
+        id.strip_prefix("signer_z")
+            .ok_or(CryptoError::InvalidPrefix("signer_z", "signer ID"))?,
+    )
+    .into_vec()
+    .map_err(|e| CryptoError::Base58Error(e.to_string()))?;
 
     ed25519_verify_internal(&verifying_key, message, &signature_bytes)
-        .map_err(|e| format!("Verification failed: {:?}", e))
+        .map_err(|e| CryptoError::InvalidVerifyingKey(e.to_string()))
 }
 
 /// Internal function to derive a signer ID from a signing key.
 /// - `secret`: Base58-encoded signing key with "signerSecret_z" prefix
 /// Returns base58-encoded verifying key with "signer_z" prefix or error string.
-pub(crate) fn get_signer_id_internal(secret: &str) -> Result<String, String> {
-    if !secret.starts_with("signerSecret_z") {
-        return Err("Invalid signer secret format: must start with 'signerSecret_z'".to_string());
-    }
-
-    let secret_bytes = bs58::decode(&secret["signerSecret_z".len()..])
-        .into_vec()
-        .map_err(|e| format!("Invalid base58 in secret: {:?}", e))?;
+pub(crate) fn get_signer_id_internal(secret: &str) -> Result<String, CryptoError> {
+    let secret_bytes = bs58::decode(secret.strip_prefix("signerSecret_z").ok_or(
+        CryptoError::InvalidPrefix("signerSecret_z", "signer secret"),
+    )?)
+    .into_vec()
+    .map_err(|e| CryptoError::Base58Error(e.to_string()))?;
 
     let verifying_key = ed25519_verifying_key_internal(&secret_bytes)
-        .map_err(|e| format!("Failed to get verifying key: {:?}", e))?;
+        .map_err(|e| CryptoError::InvalidVerifyingKey(e.to_string()))?;
 
     Ok(format!(
         "signer_z{}",
@@ -75,7 +80,7 @@ pub(crate) fn get_signer_id_internal(secret: &str) -> Result<String, String> {
 pub fn sign(message: &[u8], secret: &[u8]) -> Result<String, JsError> {
     let secret_str = std::str::from_utf8(secret)
         .map_err(|e| JsError::new(&format!("Invalid UTF-8 in secret: {:?}", e)))?;
-    sign_internal(message, secret_str).map_err(|e| JsError::new(&e))
+    sign_internal(message, secret_str).map_err(|e| JsError::new(&e.to_string()))
 }
 
 /// WASM-exposed function to verify an Ed25519 signature.
@@ -89,7 +94,7 @@ pub fn verify(signature: &[u8], message: &[u8], id: &[u8]) -> Result<bool, JsErr
         .map_err(|e| JsError::new(&format!("Invalid UTF-8 in signature: {:?}", e)))?;
     let id_str = std::str::from_utf8(id)
         .map_err(|e| JsError::new(&format!("Invalid UTF-8 in id: {:?}", e)))?;
-    verify_internal(signature_str, message, id_str).map_err(|e| JsError::new(&e))
+    verify_internal(signature_str, message, id_str).map_err(|e| JsError::new(&e.to_string()))
 }
 
 /// WASM-exposed function to derive a signer ID from a signing key.
@@ -99,7 +104,7 @@ pub fn verify(signature: &[u8], message: &[u8], id: &[u8]) -> Result<bool, JsErr
 pub fn get_signer_id(secret: &[u8]) -> Result<String, JsError> {
     let secret_str = std::str::from_utf8(secret)
         .map_err(|e| JsError::new(&format!("Invalid UTF-8 in secret: {:?}", e)))?;
-    get_signer_id_internal(secret_str).map_err(|e| JsError::new(&e))
+    get_signer_id_internal(secret_str).map_err(|e| JsError::new(&e.to_string()))
 }
 
 #[cfg(test)]
@@ -119,7 +124,7 @@ mod tests {
         let signature = sign_internal(message, &secret).unwrap();
 
         // Get the public key for verification
-        let secret_bytes = bs58::decode(&secret["signerSecret_z".len()..])
+        let secret_bytes = bs58::decode(secret.strip_prefix("signerSecret_z").unwrap())
             .into_vec()
             .unwrap();
         let verifying_key = ed25519_verifying_key_internal(&secret_bytes).unwrap();
@@ -135,18 +140,21 @@ mod tests {
 
         // Test invalid base58 in secret
         let result = sign_internal(message, "signerSecret_z!!!invalid!!!");
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Invalid base58 in secret"));
+        assert!(matches!(result, Err(CryptoError::Base58Error(_))));
 
         // Test invalid signature format
         let result = verify_internal("not_a_signature", message, "signer_z123");
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Invalid signature format"));
+        assert!(matches!(
+            result,
+            Err(CryptoError::InvalidPrefix("signature_z", "signature"))
+        ));
 
         // Test invalid signer ID format
         let result = verify_internal("signature_z123", message, "not_a_signer");
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Invalid signer ID format"));
+        assert!(matches!(
+            result,
+            Err(CryptoError::InvalidPrefix("signer_z", "signer ID"))
+        ));
     }
 
     #[test]
@@ -165,12 +173,16 @@ mod tests {
 
         // Test invalid secret format
         let result = get_signer_id_internal("invalid_secret");
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Invalid signer secret format"));
+        assert!(matches!(
+            result,
+            Err(CryptoError::InvalidPrefix(
+                "signerSecret_z",
+                "signer secret"
+            ))
+        ));
 
         // Test invalid base58
         let result = get_signer_id_internal("signerSecret_z!!!invalid!!!");
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Invalid base58 in secret"));
+        assert!(matches!(result, Err(CryptoError::Base58Error(_))));
     }
 }

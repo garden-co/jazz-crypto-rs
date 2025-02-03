@@ -7,28 +7,28 @@ use x25519_dalek::{PublicKey, StaticSecret};
 /// Returns 32 bytes of raw key material suitable for use with other X25519 functions.
 /// This key can be reused for multiple Diffie-Hellman exchanges.
 #[wasm_bindgen]
-pub fn new_x25519_private_key() -> Box<[u8]> {
+pub fn new_x25519_private_key() -> Vec<u8> {
     let secret = StaticSecret::random();
-    secret.to_bytes().into()
+    secret.to_bytes().to_vec()
 }
 
 /// Internal function to derive an X25519 public key from a private key.
 /// Takes 32 bytes of private key material and returns 32 bytes of public key material.
 /// Returns CryptoError if the key length is invalid.
-pub(crate) fn x25519_public_key_internal(private_key: &[u8]) -> Result<Box<[u8]>, CryptoError> {
+pub(crate) fn x25519_public_key_internal(private_key: &[u8]) -> Result<[u8; 32], CryptoError> {
     let bytes: [u8; 32] = private_key
         .try_into()
         .map_err(|_| CryptoError::InvalidKeyLength)?;
     let secret = StaticSecret::from(bytes);
-    Ok(PublicKey::from(&secret).to_bytes().into())
+    Ok(PublicKey::from(&secret).to_bytes())
 }
 
 /// WASM-exposed function to derive an X25519 public key from a private key.
 /// - `private_key`: 32 bytes of private key material
 /// Returns 32 bytes of public key material or throws JsError if key is invalid.
 #[wasm_bindgen]
-pub fn x25519_public_key(private_key: &[u8]) -> Result<Box<[u8]>, JsError> {
-    x25519_public_key_internal(private_key).map_err(|e| JsError::new(&e.to_string()))
+pub fn x25519_public_key(private_key: &[u8]) -> Result<Vec<u8>, JsError> {
+    Ok(x25519_public_key_internal(private_key)?.to_vec())
 }
 
 /// Internal function to perform X25519 Diffie-Hellman key exchange.
@@ -37,7 +37,7 @@ pub fn x25519_public_key(private_key: &[u8]) -> Result<Box<[u8]>, JsError> {
 pub(crate) fn x25519_diffie_hellman_internal(
     private_key: &[u8],
     public_key: &[u8],
-) -> Result<Box<[u8]>, CryptoError> {
+) -> Result<[u8; 32], CryptoError> {
     let private_bytes: [u8; 32] = private_key
         .try_into()
         .map_err(|_| CryptoError::InvalidKeyLength)?;
@@ -46,7 +46,7 @@ pub(crate) fn x25519_diffie_hellman_internal(
         .map_err(|_| CryptoError::InvalidKeyLength)?;
     let secret = StaticSecret::from(private_bytes);
     let public = PublicKey::from(public_bytes);
-    Ok(secret.diffie_hellman(&public).to_bytes().into())
+    Ok(secret.diffie_hellman(&public).to_bytes())
 }
 
 /// WASM-exposed function to perform X25519 Diffie-Hellman key exchange.
@@ -54,25 +54,22 @@ pub(crate) fn x25519_diffie_hellman_internal(
 /// - `public_key`: 32 bytes of public key material
 /// Returns 32 bytes of shared secret material or throws JsError if key exchange fails.
 #[wasm_bindgen]
-pub fn x25519_diffie_hellman(private_key: &[u8], public_key: &[u8]) -> Result<Box<[u8]>, JsError> {
-    x25519_diffie_hellman_internal(private_key, public_key)
-        .map_err(|e| JsError::new(&e.to_string()))
+pub fn x25519_diffie_hellman(private_key: &[u8], public_key: &[u8]) -> Result<Vec<u8>, JsError> {
+    Ok(x25519_diffie_hellman_internal(private_key, public_key)?.to_vec())
 }
 
 /// Internal function to derive a sealer ID from a sealer secret.
 /// Takes a base58-encoded sealer secret with "sealerSecret_z" prefix.
 /// Returns a base58-encoded sealer ID with "sealer_z" prefix or error string if format is invalid.
-pub(crate) fn get_sealer_id_internal(secret: &str) -> Result<String, String> {
-    if !secret.starts_with("sealerSecret_z") {
-        return Err("Invalid sealer secret format: must start with 'sealerSecret_z'".to_string());
-    }
-
-    let private_bytes = bs58::decode(&secret["sealerSecret_z".len()..])
-        .into_vec()
-        .map_err(|e| format!("Invalid base58 in secret: {:?}", e))?;
+pub(crate) fn get_sealer_id_internal(secret: &str) -> Result<String, CryptoError> {
+    let private_bytes = bs58::decode(secret.strip_prefix("sealerSecret_z").ok_or(
+        CryptoError::InvalidPrefix("sealerSecret_z", "sealer secret"),
+    )?)
+    .into_vec()
+    .map_err(|e| CryptoError::Base58Error(e.to_string()))?;
 
     let public_bytes = x25519_public_key_internal(&private_bytes)
-        .map_err(|e| format!("Failed to get public key: {:?}", e))?;
+        .map_err(|e| CryptoError::InvalidPublicKey(e.to_string()))?;
 
     Ok(format!(
         "sealer_z{}",
@@ -87,7 +84,7 @@ pub(crate) fn get_sealer_id_internal(secret: &str) -> Result<String, String> {
 pub fn get_sealer_id(secret: &[u8]) -> Result<String, JsError> {
     let secret_str = std::str::from_utf8(secret)
         .map_err(|e| JsError::new(&format!("Invalid UTF-8 in secret: {:?}", e)))?;
-    get_sealer_id_internal(secret_str).map_err(|e| JsError::new(&e))
+    get_sealer_id_internal(secret_str).map_err(|e| JsError::new(&e.to_string()))
 }
 
 #[cfg(test)]
@@ -156,12 +153,16 @@ mod tests {
 
         // Test invalid secret format
         let result = get_sealer_id_internal("invalid_secret");
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Invalid sealer secret format"));
+        assert!(matches!(
+            result,
+            Err(CryptoError::InvalidPrefix(
+                "sealerSecret_z",
+                "sealer secret"
+            ))
+        ));
 
         // Test invalid base58
         let result = get_sealer_id_internal("sealerSecret_z!!!invalid!!!");
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Invalid base58 in secret"));
+        assert!(matches!(result, Err(CryptoError::Base58Error(_))));
     }
 }
