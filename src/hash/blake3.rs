@@ -49,13 +49,13 @@ pub fn blake3_empty_state() -> Vec<u8> {
 /// Returns updated state vector.
 /// This allows hashing data in chunks without keeping it all in memory.
 #[wasm_bindgen]
-pub fn blake3_update_state(state: &[u8], data: &[u8]) -> Vec<u8> {
+pub fn blake3_update_state(state: &[u8], data: &[u8]) -> Box<[u8]> {
     let mut all_data = Vec::new();
     if !state.is_empty() {
         all_data.extend_from_slice(state);
     }
     all_data.extend_from_slice(data);
-    all_data
+    all_data.into_boxed_slice()
 }
 
 /// Get the final hash from a BLAKE3 state.
@@ -144,7 +144,7 @@ mod tests {
         // First update with [1,2,3,4,5]
         let data1 = &[1u8, 2, 3, 4, 5];
         let state2 = blake3_update_state(&state, data1);
-        assert_eq!(state2, data1, "Updated state should contain first chunk");
+        assert_eq!(&*state2, data1, "Updated state should contain first chunk");
 
         // Check that this matches a direct hash
         let direct_hash = blake3_hash_once(data1);
@@ -175,7 +175,7 @@ mod tests {
         let mut all_data = Vec::new();
         all_data.extend_from_slice(data1);
         all_data.extend_from_slice(data2);
-        assert_eq!(state3, all_data, "Final state should contain all data");
+        assert_eq!(&*state3, all_data, "Final state should contain all data");
 
         let direct_hash_all = blake3_hash_once(&all_data);
         assert_eq!(

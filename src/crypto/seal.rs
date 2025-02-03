@@ -45,7 +45,7 @@ fn seal_internal(
     let shared_secret = x25519_diffie_hellman_internal(&sender_private_key, &recipient_public_key)?;
 
     // Encrypt message using XSalsa20-Poly1305
-    encrypt_xsalsa20_poly1305(&shared_secret, &nonce, message)
+    Ok(encrypt_xsalsa20_poly1305(&shared_secret, &nonce, message)?.into())
 }
 
 /// Internal function to unseal a message using X25519 + XSalsa20-Poly1305.
@@ -65,7 +65,7 @@ fn unseal_internal(
     recipient_secret: &str,
     sender_id: &str,
     nonce_material: &[u8],
-) -> Result<Vec<u8>, CryptoError> {
+) -> Result<Box<[u8]>, CryptoError> {
     // Decode the base58 recipient secret (removing the "sealerSecret_z" prefix)
     let recipient_secret = recipient_secret
         .strip_prefix("sealerSecret_z")
@@ -88,7 +88,7 @@ fn unseal_internal(
     let shared_secret = x25519_diffie_hellman_internal(&recipient_private_key, &sender_public_key)?;
 
     // Decrypt message using XSalsa20-Poly1305
-    decrypt_xsalsa20_poly1305(&shared_secret, &nonce, sealed_message)
+    Ok(decrypt_xsalsa20_poly1305(&shared_secret, &nonce, sealed_message)?.into())
 }
 
 /// WASM-exposed function for sealing a message using X25519 + XSalsa20-Poly1305.
@@ -104,9 +104,8 @@ pub fn seal(
     sender_secret: &str,
     recipient_id: &str,
     nonce_material: &[u8],
-) -> Result<Vec<u8>, JsError> {
-    seal_internal(message, sender_secret, recipient_id, nonce_material)
-        .map_err(|e| JsError::new(&e.to_string()))
+) -> Result<Box<[u8]>, JsError> {
+    Ok(seal_internal(message, sender_secret, recipient_id, nonce_material)?.into())
 }
 
 /// WASM-exposed function for unsealing a message using X25519 + XSalsa20-Poly1305.
@@ -122,9 +121,8 @@ pub fn unseal(
     recipient_secret: &str,
     sender_id: &str,
     nonce_material: &[u8],
-) -> Result<Vec<u8>, JsError> {
-    unseal_internal(sealed_message, recipient_secret, sender_id, nonce_material)
-        .map_err(|e| JsError::new(&e.to_string()))
+) -> Result<Box<[u8]>, JsError> {
+    Ok(unseal_internal(sealed_message, recipient_secret, sender_id, nonce_material)?.into())
 }
 
 #[cfg(test)]
@@ -156,7 +154,7 @@ mod tests {
         // Test unsealing (using same keys since it's a test)
         let unsealed =
             unseal_internal(&sealed, &sender_secret, &recipient_id, nonce_material).unwrap();
-        assert_eq!(unsealed, message);
+        assert_eq!(&*unsealed, message);
     }
 
     #[test]

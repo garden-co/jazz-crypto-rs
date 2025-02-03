@@ -19,9 +19,9 @@ pub fn encrypt_xsalsa20(
     key: &[u8],
     nonce_material: &[u8],
     plaintext: &[u8],
-) -> Result<Vec<u8>, JsError> {
+) -> Result<Box<[u8]>, JsError> {
     let nonce = generate_nonce(nonce_material);
-    encrypt_xsalsa20_raw_internal(key, &nonce, plaintext).map_err(|e| JsError::new(&e.to_string()))
+    Ok(encrypt_xsalsa20_raw_internal(key, &nonce, plaintext)?.into())
 }
 
 /// WASM-exposed function for XSalsa20 decryption without authentication.
@@ -35,9 +35,9 @@ pub fn decrypt_xsalsa20(
     key: &[u8],
     nonce_material: &[u8],
     ciphertext: &[u8],
-) -> Result<Vec<u8>, JsError> {
+) -> Result<Box<[u8]>, JsError> {
     let nonce = generate_nonce(nonce_material);
-    decrypt_xsalsa20_raw_internal(key, &nonce, ciphertext).map_err(|e| JsError::new(&e.to_string()))
+    Ok(decrypt_xsalsa20_raw_internal(key, &nonce, ciphertext)?.into())
 }
 
 /// Internal function for raw XSalsa20 encryption without nonce generation.
@@ -47,7 +47,7 @@ pub(crate) fn encrypt_xsalsa20_raw_internal(
     key: &[u8],
     nonce: &[u8],
     plaintext: &[u8],
-) -> Result<Vec<u8>, CryptoError> {
+) -> Result<Box<[u8]>, CryptoError> {
     // Key must be 32 bytes
     let key_bytes: [u8; 32] = key.try_into().map_err(|_| CryptoError::InvalidKeyLength)?;
     // Nonce must be 24 bytes
@@ -60,7 +60,7 @@ pub(crate) fn encrypt_xsalsa20_raw_internal(
         .map_err(|_| CryptoError::CipherError)?;
     let mut buffer = plaintext.to_vec();
     cipher.apply_keystream(&mut buffer);
-    Ok(buffer)
+    Ok(buffer.into_boxed_slice())
 }
 
 /// Internal function for raw XSalsa20 decryption without nonce generation.
@@ -70,7 +70,7 @@ pub(crate) fn decrypt_xsalsa20_raw_internal(
     key: &[u8],
     nonce: &[u8],
     ciphertext: &[u8],
-) -> Result<Vec<u8>, CryptoError> {
+) -> Result<Box<[u8]>, CryptoError> {
     // Key must be 32 bytes
     let key_bytes: [u8; 32] = key.try_into().map_err(|_| CryptoError::InvalidKeyLength)?;
     // Nonce must be 24 bytes
@@ -83,7 +83,7 @@ pub(crate) fn decrypt_xsalsa20_raw_internal(
         .map_err(|_| CryptoError::CipherError)?;
     let mut buffer = ciphertext.to_vec();
     cipher.apply_keystream(&mut buffer);
-    Ok(buffer)
+    Ok(buffer.into_boxed_slice())
 }
 
 /// XSalsa20-Poly1305 encryption
@@ -91,7 +91,7 @@ pub(crate) fn encrypt_xsalsa20_poly1305(
     key: &[u8],
     nonce: &[u8],
     plaintext: &[u8],
-) -> Result<Vec<u8>, CryptoError> {
+) -> Result<Box<[u8]>, CryptoError> {
     // Key must be 32 bytes
     let key_bytes: [u8; 32] = key.try_into().map_err(|_| CryptoError::InvalidKeyLength)?;
     // Nonce must be 24 bytes
@@ -105,6 +105,7 @@ pub(crate) fn encrypt_xsalsa20_poly1305(
     // Encrypt the plaintext
     cipher
         .encrypt(&nonce_bytes.into(), plaintext)
+        .map(|v| v.into_boxed_slice())
         .map_err(|_| CryptoError::WrongTag)
 }
 
@@ -113,7 +114,7 @@ pub(crate) fn decrypt_xsalsa20_poly1305(
     key: &[u8],
     nonce: &[u8],
     ciphertext: &[u8],
-) -> Result<Vec<u8>, CryptoError> {
+) -> Result<Box<[u8]>, CryptoError> {
     // Key must be 32 bytes
     let key_bytes: [u8; 32] = key.try_into().map_err(|_| CryptoError::InvalidKeyLength)?;
     // Nonce must be 24 bytes
@@ -127,6 +128,7 @@ pub(crate) fn decrypt_xsalsa20_poly1305(
     // Decrypt the ciphertext
     cipher
         .decrypt(&nonce_bytes.into(), ciphertext)
+        .map(|v| v.into_boxed_slice())
         .map_err(|_| CryptoError::WrongTag)
 }
 
@@ -143,11 +145,11 @@ mod tests {
 
         // Test encryption
         let ciphertext = encrypt_xsalsa20_raw_internal(&key, &nonce, plaintext).unwrap();
-        assert_ne!(ciphertext, plaintext); // Ciphertext should be different from plaintext
+        assert_ne!(&*ciphertext, plaintext); // Ciphertext should be different from plaintext
 
         // Test decryption
         let decrypted = decrypt_xsalsa20_raw_internal(&key, &nonce, &ciphertext).unwrap();
-        assert_eq!(decrypted, plaintext);
+        assert_eq!(&*decrypted, plaintext);
 
         // Test that different nonce produces different ciphertext
         let nonce2 = [1u8; 24];
@@ -221,7 +223,7 @@ mod tests {
 
         // Test decryption
         let decrypted = decrypt_xsalsa20_poly1305(&key, &nonce, &ciphertext).unwrap();
-        assert_eq!(decrypted, plaintext);
+        assert_eq!(&*decrypted, plaintext);
 
         // Test that different nonce produces different ciphertext
         let nonce2 = [1u8; 24];

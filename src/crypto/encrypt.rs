@@ -10,7 +10,7 @@ fn encrypt_internal(
     plaintext: &[u8],
     key_secret: &str,
     nonce_material: &[u8],
-) -> Result<Vec<u8>, CryptoError> {
+) -> Result<Box<[u8]>, CryptoError> {
     // Decode the base58 key secret (removing the "keySecret_z" prefix)
     let key_secret = key_secret
         .strip_prefix("keySecret_z")
@@ -23,7 +23,7 @@ fn encrypt_internal(
     let nonce = generate_nonce(nonce_material);
 
     // Encrypt using XSalsa20
-    super::xsalsa20::encrypt_xsalsa20_raw_internal(&key, &nonce, plaintext)
+    Ok(super::xsalsa20::encrypt_xsalsa20_raw_internal(&key, &nonce, plaintext)?.into())
 }
 
 /// Internal function to decrypt bytes with a key secret and nonce material.
@@ -33,7 +33,7 @@ fn decrypt_internal(
     ciphertext: &[u8],
     key_secret: &str,
     nonce_material: &[u8],
-) -> Result<Vec<u8>, CryptoError> {
+) -> Result<Box<[u8]>, CryptoError> {
     // Decode the base58 key secret (removing the "keySecret_z" prefix)
     let key_secret = key_secret
         .strip_prefix("keySecret_z")
@@ -46,7 +46,7 @@ fn decrypt_internal(
     let nonce = generate_nonce(nonce_material);
 
     // Decrypt using XSalsa20
-    super::xsalsa20::decrypt_xsalsa20_raw_internal(&key, &nonce, ciphertext)
+    Ok(super::xsalsa20::decrypt_xsalsa20_raw_internal(&key, &nonce, ciphertext)?.into())
 }
 
 /// WASM-exposed function to encrypt bytes with a key secret and nonce material.
@@ -55,7 +55,11 @@ fn decrypt_internal(
 /// - `nonce_material`: Raw bytes used to generate the nonce
 /// Returns the encrypted bytes or throws a JsError if encryption fails.
 #[wasm_bindgen(js_name = encrypt)]
-pub fn encrypt(value: &[u8], key_secret: &str, nonce_material: &[u8]) -> Result<Vec<u8>, JsError> {
+pub fn encrypt(
+    value: &[u8],
+    key_secret: &str,
+    nonce_material: &[u8],
+) -> Result<Box<[u8]>, JsError> {
     encrypt_internal(value, key_secret, nonce_material).map_err(|e| JsError::new(&e.to_string()))
 }
 
@@ -69,9 +73,8 @@ pub fn decrypt(
     ciphertext: &[u8],
     key_secret: &str,
     nonce_material: &[u8],
-) -> Result<Vec<u8>, JsError> {
-    decrypt_internal(ciphertext, key_secret, nonce_material)
-        .map_err(|e| JsError::new(&e.to_string()))
+) -> Result<Box<[u8]>, JsError> {
+    Ok(decrypt_internal(ciphertext, key_secret, nonce_material)?.into())
 }
 
 #[cfg(test)]
@@ -91,7 +94,7 @@ mod tests {
 
         // Test decryption
         let decrypted = decrypt_internal(&ciphertext, key_secret, nonce_material).unwrap();
-        assert_eq!(decrypted, plaintext);
+        assert_eq!(&*decrypted, plaintext);
     }
 
     #[test]
