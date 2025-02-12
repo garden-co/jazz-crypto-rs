@@ -1,6 +1,6 @@
 {
 	"name": "jazz-crypto-rs",
-	"version": "0.0.1-rc.5",
+	"version": "0.0.2",
 	"type": "module",
 	"main": "./dist/node/jazz_crypto_rs.js",
 	"browser": "./dist/wrapper.js",
