@@ -21,7 +21,8 @@
 		"build:wrapper": "vite build",
 		"test": "cargo test",
 		"changeset": "changeset",
-		"postbuild": "rm -f dist/**/.gitignore"
+		"postbuild": "rm -f dist/**/.gitignore",
+		"release": "pnpm build && pnpm changeset publish && git push --follow-tags"
 	},
 	"devDependencies": {
 		"@changesets/cli": "^2.27.10",
