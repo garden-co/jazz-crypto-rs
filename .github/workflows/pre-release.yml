@@ -23,4 +23,4 @@ jobs:
         run: pnpm build
 
       - name: Pre publish
-        run: pnpm pkg-pr-new publish
+        run: pnpx pkg-pr-new publish
