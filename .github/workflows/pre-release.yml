@@ -1,0 +1,22 @@
+name: Pre-Publish tagged Pull Requests
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pre-release:
+    if: contains(github.event.pull_request.labels.*.name, 'pre-release')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Source Code
+        uses: ./.github/actions/source-code/
+
+      - name: Pnpm Build
+        run: pnpm build
+
+      - name: Pre publish
+        run: pnpm pkg-pr-new publish
