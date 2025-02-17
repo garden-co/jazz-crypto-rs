@@ -2,13 +2,12 @@
 	"name": "jazz-crypto-rs",
 	"version": "0.0.3",
 	"type": "module",
-	"main": "./dist/node/jazz_crypto_rs.js",
-	"browser": "./dist/wrapper.js",
+	"module": "./dist/wrapper.js",
 	"types": "./dist/node/jazz_crypto_rs.d.ts",
 	"exports": {
 		".": {
 			"types": "./dist/node/jazz_crypto_rs.d.ts",
-			"browser": "./dist/wrapper.js",
+			"import": "./dist/wrapper.js",
 			"node": "./dist/node/jazz_crypto_rs.js",
 			"default": "./dist/wrapper.js"
 		}
