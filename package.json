@@ -15,7 +15,7 @@
 	"files": ["dist"],
 	"scripts": {
 		"clean": "rm -rf dist",
-		"build": "pnpm clean && pnpm build:wasm && pnpm build:wrapper",
+		"build": "pnpm clean && pnpm build:wasm && pnpm build:wrapper && pnpm postbuild",
 		"build:wasm": "wasm-pack build --release --target web --out-dir dist/",
 		"build:wrapper": "vite build",
 		"test:rust": "cargo test",
@@ -23,7 +23,7 @@
 		"test": "pnpm test:rust && pnpm test:node",
 		"changeset": "changeset",
 		"changeset-version": "changeset version && pnpm i --no-frozen-lockfile",
-		"postbuild": "rm -f dist/**/.gitignore",
+		"postbuild": "rm -f dist/.gitignore",
 		"release": "pnpm build && pnpm changeset publish && git push --follow-tags"
 	},
 	"devDependencies": {
