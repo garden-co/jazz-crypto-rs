@@ -2,36 +2,40 @@
 	"name": "jazz-crypto-rs",
 	"version": "0.0.4",
 	"type": "module",
-	"module": "./dist/wrapper.js",
-	"types": "./dist/node/jazz_crypto_rs.d.ts",
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
-			"types": "./dist/node/jazz_crypto_rs.d.ts",
-			"import": "./dist/wrapper.js",
-			"node": "./dist/node/jazz_crypto_rs.js",
-			"default": "./dist/wrapper.js"
+			"import": "./dist/index.js",
+			"require": "./dist/index.js",
+			"types": "./dist/index.d.ts"
 		}
 	},
+	"files": ["dist"],
 	"scripts": {
 		"clean": "rm -rf dist",
-		"build": "pnpm clean && pnpm build:node && pnpm build:web && pnpm build:wrapper",
-		"build:node": "wasm-pack build --release --target nodejs --out-dir dist/node",
-		"build:web": "wasm-pack build --release --target bundler --out-dir dist/web",
+		"build": "pnpm clean && pnpm build:wasm && pnpm build:wrapper && pnpm postbuild",
+		"build:wasm": "wasm-pack build --release --target web --out-dir dist/",
 		"build:wrapper": "vite build",
-		"test": "cargo test",
+		"test:rust": "cargo test",
+		"test:node": "node tests/node.test.js",
+		"test": "pnpm test:rust && pnpm test:node",
 		"changeset": "changeset",
 		"changeset-version": "changeset version && pnpm i --no-frozen-lockfile",
-		"postbuild": "rm -f dist/**/.gitignore",
+		"postbuild": "rm -f dist/.gitignore",
 		"release": "pnpm build && pnpm changeset publish && git push --follow-tags"
 	},
 	"devDependencies": {
 		"@changesets/cli": "^2.27.10",
+		"@types/node": "^22.13.4",
 		"pkg-pr-new": "^0.0.39",
 		"typescript": "^5.0.0",
 		"vite": "^5.0.0",
+		"vite-plugin-dts": "^4.5.0",
 		"vite-plugin-top-level-await": "^1.4.1",
 		"vite-plugin-wasm": "^3.3.0",
 		"wasm-pack": "^0.13.1"
 	},
-	"packageManager": "pnpm@10.3.0+sha512.ee592eda8815a8a293c206bb0917c4bb0ff274c50def7cbc17be05ec641fc2d1b02490ce660061356bd0d126a4d7eb2ec8830e6959fb8a447571c631d5a2442d"
+	"packageManager": "pnpm@10.3.0"
 }
