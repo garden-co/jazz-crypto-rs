@@ -1,3 +1,5 @@
+use wasm_bindgen::prelude::*;
+
 mod error;
 pub use error::CryptoError;
 
@@ -20,4 +22,11 @@ pub mod crypto {
     pub use sign::*;
     pub use x25519::*;
     pub use xsalsa20::*;
+}
+
+// Just add this to enable wasm
+#[wasm_bindgen(start)]
+pub fn start() {
+    #[cfg(feature = "console_error_panic_hook")]
+    console_error_panic_hook::set_once();
 }

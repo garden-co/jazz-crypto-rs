@@ -2,14 +2,14 @@
 	"name": "jazz-crypto-rs",
 	"version": "0.0.4",
 	"type": "module",
-	"module": "./dist/wrapper.js",
-	"types": "./dist/node/jazz_crypto_rs.d.ts",
+	"main": "./dist/index.cjs.js",
+	"module": "./dist/index.es.js",
+	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
-			"types": "./dist/node/jazz_crypto_rs.d.ts",
-			"import": "./dist/wrapper.js",
-			"node": "./dist/node/jazz_crypto_rs.js",
-			"default": "./dist/wrapper.js"
+			"import": "./dist/index.es.js",
+			"require": "./dist/index.cjs.js",
+			"types": "./dist/index.d.ts"
 		}
 	},
 	"scripts": {
@@ -17,6 +17,7 @@
 		"build": "pnpm clean && pnpm build:node && pnpm build:web && pnpm build:wrapper",
 		"build:node": "wasm-pack build --release --target nodejs --out-dir dist/node",
 		"build:web": "wasm-pack build --release --target bundler --out-dir dist/web",
+		"build:bundle": "pnpm clean && wasm-pack build --release --target bundler --out-dir dist/",
 		"build:wrapper": "vite build",
 		"test": "cargo test",
 		"changeset": "changeset",
@@ -26,9 +27,11 @@
 	},
 	"devDependencies": {
 		"@changesets/cli": "^2.27.10",
+		"@types/node": "^22.13.4",
 		"pkg-pr-new": "^0.0.39",
 		"typescript": "^5.0.0",
 		"vite": "^5.0.0",
+		"vite-plugin-dts": "^4.5.0",
 		"vite-plugin-top-level-await": "^1.4.1",
 		"vite-plugin-wasm": "^3.3.0",
 		"wasm-pack": "^0.13.1"
