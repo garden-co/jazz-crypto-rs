@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { defineConfig } from "vite";
 import type { Plugin } from "vite";
+import dts from "vite-plugin-dts";
 import topLevelAwait from "vite-plugin-top-level-await";
 
 function wasmBase64Plugin(): Plugin {
@@ -23,14 +24,22 @@ export default defineConfig({
 	build: {
 		lib: {
 			entry: {
+				index: "./lib/index.ts",
 				wasm: "./lib/wasm.ts",
 			},
 			formats: ["es"],
-			fileName: (format, entryName) => `${entryName}.${format}.js`,
+			fileName: (format, entryName) => `${entryName}.js`,
 		},
 		target: "esnext",
 		emptyOutDir: false,
 	},
 	assetsInclude: ["**/*.wasm"],
-	plugins: [topLevelAwait(), wasmBase64Plugin()],
+	plugins: [
+		topLevelAwait(),
+		wasmBase64Plugin(),
+		dts({
+			include: ["lib/index.ts"],
+			rollupTypes: true,
+		}),
+	],
 });

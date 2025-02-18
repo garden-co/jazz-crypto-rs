@@ -2,13 +2,13 @@
 	"name": "jazz-crypto-rs",
 	"version": "0.0.4",
 	"type": "module",
-	"main": "./dist/index.cjs.js",
-	"module": "./dist/index.es.js",
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
-			"import": "./dist/index.es.js",
-			"require": "./dist/index.cjs.js",
+			"import": "./dist/index.js",
+			"require": "./dist/index.js",
 			"types": "./dist/index.d.ts"
 		}
 	},
@@ -16,9 +16,11 @@
 	"scripts": {
 		"clean": "rm -rf dist",
 		"build": "pnpm clean && pnpm build:wasm && pnpm build:wrapper",
-		"build:wasm": "wasm-pack build --release --target bundler --out-dir dist/",
+		"build:wasm": "wasm-pack build --release --target web --out-dir dist/",
 		"build:wrapper": "vite build",
-		"test": "cargo test",
+		"test:rust": "cargo test",
+		"test:node": "node tests/node.test.js",
+		"test": "pnpm test:rust && pnpm test:node",
 		"changeset": "changeset",
 		"changeset-version": "changeset version && pnpm i --no-frozen-lockfile",
 		"postbuild": "rm -f dist/**/.gitignore",
