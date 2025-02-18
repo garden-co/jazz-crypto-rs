@@ -31,3 +31,11 @@ wasm-bindgen-test = "0.3"
 
 [profile.release]
 lto = true
+opt-level = 3
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+opt-level = 0
+debug = true
