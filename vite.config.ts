@@ -1,21 +1,36 @@
+import { readFileSync } from "node:fs";
 import { defineConfig } from "vite";
-import dts from "vite-plugin-dts";
+import type { Plugin } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
-import wasm from "vite-plugin-wasm";
+
+function wasmBase64Plugin(): Plugin {
+	return {
+		name: "wasm-base64",
+		transform(code, id) {
+			if (id.endsWith(".wasm?raw")) {
+				const wasmPath = id.slice(0, -4); // remove "?raw"
+				const wasmContent = readFileSync(wasmPath);
+				const base64 = wasmContent.toString("base64");
+				return {
+					code: `export default "data:application/wasm;base64,${base64}";`,
+				};
+			}
+		},
+	};
+}
 
 export default defineConfig({
 	build: {
 		lib: {
-			entry: "./lib/index.ts",
-			formats: ["es", "cjs"],
-			fileName: (format) => `index.${format}.js`,
+			entry: {
+				wasm: "./lib/wasm.ts",
+			},
+			formats: ["es"],
+			fileName: (format, entryName) => `${entryName}.${format}.js`,
 		},
-		rollupOptions: {
-			external: [/\.wasm$/],
-		},
-		target: "es2015",
+		target: "esnext",
 		emptyOutDir: false,
-		minify: false,
 	},
-	plugins: [wasm(), topLevelAwait(), dts({ include: ["lib"] })],
+	assetsInclude: ["**/*.wasm"],
+	plugins: [topLevelAwait(), wasmBase64Plugin()],
 });
