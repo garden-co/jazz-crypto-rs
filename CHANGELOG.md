@@ -1,5 +1,11 @@
 # jazz-crypto-rs
 
+## 0.0.5
+
+### Patch Changes
+
+- dab5438: Reduce build to one bundle (for more environments)
+
 ## 0.0.4
 
 ### Patch Changes

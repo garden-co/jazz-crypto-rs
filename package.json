@@ -1,6 +1,6 @@
 {
 	"name": "jazz-crypto-rs",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"type": "module",
 	"main": "./dist/index.js",
 	"module": "./dist/index.js",
@@ -12,7 +12,9 @@
 			"types": "./dist/index.d.ts"
 		}
 	},
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"clean": "rm -rf dist",
 		"build": "pnpm clean && pnpm build:wasm && pnpm build:wrapper && pnpm postbuild",
