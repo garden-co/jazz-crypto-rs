@@ -12,9 +12,7 @@
 			"types": "./dist/index.d.ts"
 		}
 	},
-	"files": [
-		"dist"
-	],
+	"files": ["dist/*"],
 	"scripts": {
 		"clean": "rm -rf dist",
 		"build": "pnpm clean && pnpm build:wasm && pnpm build:wrapper && pnpm postbuild",

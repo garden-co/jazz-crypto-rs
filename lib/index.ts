@@ -1,13 +1,10 @@
-export * from "../dist/jazz_crypto_rs.js";
 import __wbg_init from "../dist/jazz_crypto_rs.js";
-import { data } from "./wasm.js";
-
 let isInitialized = false;
 
 export async function initialize() {
 	if (isInitialized) return;
 	isInitialized = true;
-	return await __wbg_init(data);
+	return await __wbg_init();
 }
 
 // Re-export everything from wasm
