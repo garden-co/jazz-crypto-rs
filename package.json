@@ -1,6 +1,6 @@
 {
 	"name": "jazz-crypto-rs",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"type": "module",
 	"main": "./dist/cjs/src/index.cjs",
 	"module": "./dist/esm/src/index.mjs",
@@ -12,7 +12,11 @@
 			"types": "./dist/types/src/index.d.ts"
 		}
 	},
-	"files": ["./dist/esm", "./dist/cjs", "./dist/types"],
+	"files": [
+		"./dist/esm",
+		"./dist/cjs",
+		"./dist/types"
+	],
 	"scripts": {
 		"clean": "rm -rf wasm/pkg dist",
 		"build": "pnpm clean && pnpm build:wasm && pnpm build:dist",
