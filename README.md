@@ -65,7 +65,7 @@ Install the [`rust-analyzer` extension](https://marketplace.visualstudio.com/ite
 // .vscode/settings.json
 {
   "rust-analyzer.linkedProjects": [
-    "packages/jazz-crypto-rs/Cargo.toml"
+    "wasm/Cargo.toml"
   ]
 }
 ```
@@ -73,6 +73,8 @@ Install the [`rust-analyzer` extension](https://marketplace.visualstudio.com/ite
 
 ## Test
 
+Test both Rust source code and Node.js' build.
+
 ```bash
-cargo test
+pnpm test
 ```
