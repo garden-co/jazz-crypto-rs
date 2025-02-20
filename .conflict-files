@@ -1,0 +1,3 @@
+ancestorEntries = ["pnpm-lock.yaml"]
+ourEntries = ["pnpm-lock.yaml", "rollup.config.js"]
+theirEntries = ["pnpm-lock.yaml", "rollup.config.js"]
