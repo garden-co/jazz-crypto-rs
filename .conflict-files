@@ -1,3 +1,0 @@
-ancestorEntries = []
-ourEntries = ["src/index.ts"]
-theirEntries = ["src/index.ts"]
