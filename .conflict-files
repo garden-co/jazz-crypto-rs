@@ -1,3 +1,0 @@
-ancestorEntries = []
-ourEntries = ["rollup.config.js"]
-theirEntries = ["rollup.config.js"]
