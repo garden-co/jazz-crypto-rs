@@ -11,7 +11,7 @@ export const config = [
 				format: "esm",
 				exports: "named",
 				preserveModules: true,
-				// sourcemap: true,
+				sourcemap: true,
 				entryFileNames: "[name].mjs",
 			},
 			{
@@ -19,7 +19,7 @@ export const config = [
 				format: "cjs",
 				exports: "named",
 				preserveModules: true,
-				// sourcemap: true,
+				sourcemap: true,
 				entryFileNames: "[name].cjs",
 			},
 		],
