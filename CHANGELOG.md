@@ -1,5 +1,11 @@
 # jazz-crypto-rs
 
+## 0.0.6
+
+### Patch Changes
+
+- 462e06a: Internal optimisations
+
 ## 0.0.5
 
 ### Patch Changes
