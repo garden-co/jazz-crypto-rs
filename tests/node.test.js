@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import { blake3_hash_once, initialize } from "../dist/index.js";
+import { blake3_hash_once, initialize } from "../dist/esm/src/index.mjs";
 
 async function test() {
 	await initialize();

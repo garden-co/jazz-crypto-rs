@@ -6,8 +6,7 @@
 		"strict": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
-		"declaration": true,
 		"noImplicitAny": false
 	},
-	"include": ["lib/**/*"]
+	"include": ["src/index.ts"]
 }
