@@ -1,6 +1,6 @@
 {
 	"name": "jazz-crypto-rs",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"type": "module",
 	"main": "./dist/cjs/src/index.cjs",
 	"module": "./dist/esm/src/index.mjs",

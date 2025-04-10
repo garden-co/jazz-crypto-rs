@@ -1,5 +1,11 @@
 # jazz-crypto-rs
 
+## 0.0.7
+
+### Patch Changes
+
+- 9219c1c: Fixes deprecation warning for WASM init
+
 ## 0.0.6
 
 ### Patch Changes
