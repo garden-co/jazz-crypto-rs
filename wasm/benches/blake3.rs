@@ -128,73 +128,39 @@ mod tests {
 
     #[bench]
     fn bench_blake3_incremental(b: &mut Bencher) {
-        b.iter(|| {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+
+        let blake3_incremental = |rng: &mut rand::rngs::ThreadRng, n: u32| {
+            let n = test::black_box(n);
+
+            let mut all_data = Vec::new();
+
             // Initial state
             let mut state = blake3_empty_state();
 
-            // First update with [1,2,3,4,5]
-            let data1 = &[1u8, 2, 3, 4, 5];
-            blake3_update_state(&mut state, data1);
+            for _ in 0..n {
+                let mut data = [0u8; 64];
+                rng.fill(&mut data[..]);
+                all_data.extend_from_slice(&data);
+                blake3_update_state(&mut state, &data);
+            }
 
             // Check that this matches a direct hash
-            let direct_hash = blake3_hash_once(data1);
+            let direct_hash = blake3_hash_once(&all_data);
             let state_hash = state.finalize();
             assert_eq!(
                 state_hash, direct_hash,
-                "First update should match direct hash"
-            );
-
-            // Create new state for second test
-            let mut state = blake3_empty_state();
-            blake3_update_state(&mut state, data1);
-
-            // Verify the exact expected hash from the TypeScript test for the first update
-            let expected_first_hash = [
-                2, 79, 103, 192, 66, 90, 61, 192, 47, 186, 245, 140, 185, 61, 229, 19, 46, 61, 117,
-                197, 25, 250, 160, 186, 218, 33, 73, 29, 136, 201, 112, 87,
-            ]
-            .to_vec()
-            .into_boxed_slice();
-            assert_eq!(
-                state.finalize(),
-                expected_first_hash,
-                "First update should match expected hash"
-            );
-
-            // Test with two updates
-            let mut state = blake3_empty_state();
-            let data1 = &[1u8, 2, 3, 4, 5];
-            let data2 = &[6u8, 7, 8, 9, 10];
-            blake3_update_state(&mut state, data1);
-            blake3_update_state(&mut state, data2);
-
-            // Compare with a single hash of all data
-            let mut all_data = Vec::new();
-            all_data.extend_from_slice(data1);
-            all_data.extend_from_slice(data2);
-            let direct_hash_all = blake3_hash_once(&all_data);
-            assert_eq!(
-                state.finalize(),
-                direct_hash_all,
                 "Final state should match direct hash of all data"
             );
+        };
+        b.iter(|| {
+            let num_benches = test::black_box(1000);
+            let n: u32 = rng.gen_range(1..10);
 
-            // Test final hash matches expected value
-            let mut state = blake3_empty_state();
-            blake3_update_state(&mut state, data1);
-            blake3_update_state(&mut state, data2);
-
-            let expected_final_hash = [
-                165, 131, 141, 69, 2, 69, 39, 236, 196, 244, 180, 213, 147, 124, 222, 39, 68, 223,
-                54, 176, 242, 97, 200, 101, 204, 79, 21, 233, 56, 51, 1, 199,
-            ]
-            .to_vec()
-            .into_boxed_slice();
-            assert_eq!(
-                state.finalize(),
-                expected_final_hash,
-                "Final state should match expected hash"
-            );
+            (0..num_benches).for_each(|_| {
+                blake3_incremental(&mut rng, n);
+            });
         });
     }
 }
