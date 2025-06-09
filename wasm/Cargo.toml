@@ -39,3 +39,9 @@ strip = true
 [profile.dev]
 opt-level = 0
 debug = true
+
+[package.metadata.wasm-pack.profile.profiling]
+wasm-opt = ['-O', '--enable-bulk-memory']
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ['-O', '--enable-bulk-memory']

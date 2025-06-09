@@ -41,5 +41,10 @@
 		"typescript": "^5.0.0",
 		"wasm-pack": "^0.13.1"
 	},
-	"packageManager": "pnpm@10.3.0"
+	"packageManager": "pnpm@10.3.0",
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"wasm-pack"
+		]
+	}
 }
