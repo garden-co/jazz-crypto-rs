@@ -17,7 +17,7 @@ use wasm_bindgen::prelude::*;
 /// 2. Generate shared secret using X25519 key exchange
 /// 3. Generate nonce from nonce material using BLAKE3
 /// 4. Encrypt message using XSalsa20-Poly1305 with the shared secret
-fn seal_internal(
+pub fn seal_internal(
     message: &[u8],
     sender_secret: &str,
     recipient_id: &str,
