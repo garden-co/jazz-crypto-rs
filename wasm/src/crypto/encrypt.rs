@@ -6,7 +6,7 @@ use wasm_bindgen::prelude::*;
 /// Internal function to encrypt bytes with a key secret and nonce material.
 /// Takes a base58-encoded key secret with "keySecret_z" prefix and raw nonce material.
 /// Returns the encrypted bytes or a CryptoError if the key format is invalid.
-fn encrypt_internal(
+pub fn encrypt_internal(
     plaintext: &[u8],
     key_secret: &str,
     nonce_material: &[u8],
@@ -29,7 +29,7 @@ fn encrypt_internal(
 /// Internal function to decrypt bytes with a key secret and nonce material.
 /// Takes a base58-encoded key secret with "keySecret_z" prefix and raw nonce material.
 /// Returns the decrypted bytes or a CryptoError if the key format is invalid.
-fn decrypt_internal(
+pub fn decrypt_internal(
     ciphertext: &[u8],
     key_secret: &str,
     nonce_material: &[u8],
