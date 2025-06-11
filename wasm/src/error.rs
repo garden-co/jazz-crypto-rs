@@ -2,7 +2,7 @@ use std::fmt;
 
 #[derive(Debug)]
 pub enum CryptoError {
-    InvalidKeyLength,
+    InvalidKeyLength(usize, usize),
     InvalidNonceLength,
     InvalidSealerSecretFormat,
     InvalidSignatureLength,
@@ -17,7 +17,9 @@ pub enum CryptoError {
 impl fmt::Display for CryptoError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            CryptoError::InvalidKeyLength => write!(f, "Invalid key length"),
+            CryptoError::InvalidKeyLength(expected, actual) => {
+                write!(f, "Invalid key length (expected {expected}, got {actual})")
+            }
             CryptoError::InvalidNonceLength => write!(f, "Invalid nonce length"),
             CryptoError::InvalidSealerSecretFormat => {
                 write!(

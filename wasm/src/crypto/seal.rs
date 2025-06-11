@@ -24,20 +24,24 @@ pub fn seal_internal(
     nonce_material: &[u8],
 ) -> Result<Vec<u8>, CryptoError> {
     // Decode the base58 sender secret (removing the "sealerSecret_z" prefix)
-    let sender_secret = sender_secret
-        .strip_prefix("sealerSecret_z")
-        .ok_or(CryptoError::InvalidKeyLength)?;
+    let sender_secret =
+        sender_secret
+            .strip_prefix("sealerSecret_z")
+            .ok_or(CryptoError::InvalidPrefix(
+                "sealer secret",
+                "sealerSecret_z",
+            ))?;
     let sender_private_key = bs58::decode(sender_secret)
         .into_vec()
-        .map_err(|_| CryptoError::InvalidKeyLength)?;
+        .map_err(|e| CryptoError::Base58Error(e.to_string()))?;
 
     // Decode the base58 recipient ID (removing the "sealer_z" prefix)
     let recipient_id = recipient_id
         .strip_prefix("sealer_z")
-        .ok_or(CryptoError::InvalidKeyLength)?;
+        .ok_or(CryptoError::InvalidPrefix("sealer ID", "sealer_z"))?;
     let recipient_public_key = bs58::decode(recipient_id)
         .into_vec()
-        .map_err(|_| CryptoError::InvalidKeyLength)?;
+        .map_err(|e| CryptoError::Base58Error(e.to_string()))?;
 
     let nonce = generate_nonce(nonce_material);
 
@@ -67,20 +71,24 @@ fn unseal_internal(
     nonce_material: &[u8],
 ) -> Result<Box<[u8]>, CryptoError> {
     // Decode the base58 recipient secret (removing the "sealerSecret_z" prefix)
-    let recipient_secret = recipient_secret
-        .strip_prefix("sealerSecret_z")
-        .ok_or(CryptoError::InvalidKeyLength)?;
+    let recipient_secret =
+        recipient_secret
+            .strip_prefix("sealerSecret_z")
+            .ok_or(CryptoError::InvalidPrefix(
+                "sealer secret",
+                "sealerSecret_z",
+            ))?;
     let recipient_private_key = bs58::decode(recipient_secret)
         .into_vec()
-        .map_err(|_| CryptoError::InvalidKeyLength)?;
+        .map_err(|e| CryptoError::Base58Error(e.to_string()))?;
 
     // Decode the base58 sender ID (removing the "sealer_z" prefix)
     let sender_id = sender_id
         .strip_prefix("sealer_z")
-        .ok_or(CryptoError::InvalidKeyLength)?;
+        .ok_or(CryptoError::InvalidPrefix("sealer ID", "sealer_z"))?;
     let sender_public_key = bs58::decode(sender_id)
         .into_vec()
-        .map_err(|_| CryptoError::InvalidKeyLength)?;
+        .map_err(|e| CryptoError::Base58Error(e.to_string()))?;
 
     let nonce = generate_nonce(nonce_material);
 

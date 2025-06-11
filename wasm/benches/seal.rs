@@ -1,8 +1,14 @@
 #![feature(test)]
 extern crate test;
 
+static BAD_ALPHABET: std::sync::LazyLock<bs58::Alphabet> = std::sync::LazyLock::new(|| {
+    bs58::Alphabet::new(b" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXY")
+        .unwrap_or(bs58::Alphabet::DEFAULT.to_owned())
+});
+
 #[cfg(test)]
 mod tests {
+    use crate::BAD_ALPHABET;
     use jazz_crypto_rs::crypto::seal::*;
     use jazz_crypto_rs::crypto::x25519::*;
     use test::Bencher;
@@ -120,10 +126,9 @@ mod tests {
                 rng.fill(&mut sealer_id_invalid_format[..]);
                 let sealer_secret_invalid_encoding_string = format!(
                     "sealerSecret_z{}",
-                    sealer_secret_invalid_encoding
-                        .iter()
-                        .map(|b| format!("{:x}", b))
-                        .collect::<String>()
+                    bs58::encode(sealer_secret_invalid_encoding)
+                        .with_alphabet(&BAD_ALPHABET)
+                        .into_string()
                 );
                 invalid_keys(
                     &message,

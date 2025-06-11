@@ -14,10 +14,10 @@ pub fn encrypt_internal(
     // Decode the base58 key secret (removing the "keySecret_z" prefix)
     let key_secret = key_secret
         .strip_prefix("keySecret_z")
-        .ok_or(CryptoError::InvalidKeyLength)?;
+        .ok_or(CryptoError::InvalidPrefix("key secret", "keySecret_z"))?;
     let key = bs58::decode(key_secret)
         .into_vec()
-        .map_err(|_| CryptoError::InvalidKeyLength)?;
+        .map_err(|e| CryptoError::Base58Error(e.to_string()))?;
 
     // Generate nonce from nonce material
     let nonce = generate_nonce(nonce_material);
@@ -37,10 +37,10 @@ pub fn decrypt_internal(
     // Decode the base58 key secret (removing the "keySecret_z" prefix)
     let key_secret = key_secret
         .strip_prefix("keySecret_z")
-        .ok_or(CryptoError::InvalidKeyLength)?;
+        .ok_or(CryptoError::InvalidPrefix("key secret", "keySecret_z"))?;
     let key = bs58::decode(key_secret)
         .into_vec()
-        .map_err(|_| CryptoError::InvalidKeyLength)?;
+        .map_err(|e| CryptoError::Base58Error(e.to_string()))?;
 
     // Generate nonce from nonce material
     let nonce = generate_nonce(nonce_material);

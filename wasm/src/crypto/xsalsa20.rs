@@ -49,7 +49,9 @@ pub(crate) fn encrypt_xsalsa20_raw_internal(
     plaintext: &[u8],
 ) -> Result<Box<[u8]>, CryptoError> {
     // Key must be 32 bytes
-    let key_bytes: [u8; 32] = key.try_into().map_err(|_| CryptoError::InvalidKeyLength)?;
+    let key_bytes: [u8; 32] = key
+        .try_into()
+        .map_err(|_| CryptoError::InvalidKeyLength(32, key.len()))?;
     // Nonce must be 24 bytes
     let nonce_bytes: [u8; 24] = nonce
         .try_into()
@@ -72,7 +74,9 @@ pub(crate) fn decrypt_xsalsa20_raw_internal(
     ciphertext: &[u8],
 ) -> Result<Box<[u8]>, CryptoError> {
     // Key must be 32 bytes
-    let key_bytes: [u8; 32] = key.try_into().map_err(|_| CryptoError::InvalidKeyLength)?;
+    let key_bytes: [u8; 32] = key
+        .try_into()
+        .map_err(|_| CryptoError::InvalidKeyLength(32, key.len()))?;
     // Nonce must be 24 bytes
     let nonce_bytes: [u8; 24] = nonce
         .try_into()
@@ -93,7 +97,9 @@ pub(crate) fn encrypt_xsalsa20_poly1305(
     plaintext: &[u8],
 ) -> Result<Box<[u8]>, CryptoError> {
     // Key must be 32 bytes
-    let key_bytes: [u8; 32] = key.try_into().map_err(|_| CryptoError::InvalidKeyLength)?;
+    let key_bytes: [u8; 32] = key
+        .try_into()
+        .map_err(|_| CryptoError::InvalidKeyLength(32, key.len()))?;
     // Nonce must be 24 bytes
     let nonce_bytes: [u8; 24] = nonce
         .try_into()
@@ -116,7 +122,9 @@ pub(crate) fn decrypt_xsalsa20_poly1305(
     ciphertext: &[u8],
 ) -> Result<Box<[u8]>, CryptoError> {
     // Key must be 32 bytes
-    let key_bytes: [u8; 32] = key.try_into().map_err(|_| CryptoError::InvalidKeyLength)?;
+    let key_bytes: [u8; 32] = key
+        .try_into()
+        .map_err(|_| CryptoError::InvalidKeyLength(32, key.len()))?;
     // Nonce must be 24 bytes
     let nonce_bytes: [u8; 24] = nonce
         .try_into()
