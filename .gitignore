@@ -30,3 +30,6 @@ wasm-pack.log
 .direnv/
 result
 result-*
+
+# Xcode Instruments
+*.trace

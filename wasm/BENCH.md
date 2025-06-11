@@ -28,6 +28,8 @@ codesign -s - -v -f --entitlements =(echo -n '<?xml version="1.0" encoding="UTF-
 </plist>') <PATH_TO_EXECUTABLE>
 ```
 3. Set the executable as the target in Instruments and begin a new recording.
+- Alternatively, you can run `xcrun xctrace record --template <TEMPLATE> --launch <PATH_TO_EXECUTABLE>` to generate a trace file that can be opened in Instruments.
+- To detect memory leaks without using the Instruments GUI, you can run `leaks --atExit -- <PATH_TO_EXECUTABLE>`.
 
 ## Additional Resources
 - [Performance profiling on Linux](https://rust-lang.github.io/packed_simd/perf-guide/prof/linux.html#performance-profiling-on-linux)
