@@ -13,6 +13,22 @@ If using `cargo-instruments` on macOS, you can run tests, examples, and benchmar
 - For a list of Xcode Instruments templates, run `cargo instruments -l`.
 - Example: `cargo instruments -t Leaks --bench blake3` to detect memory leaks in the BLAKE3 hashing benchmark.
 
+#### Code Signing Issues
+If you encounter issues connecting Instruments to a benchmark, it may be necessary to self-sign the benchmarking executable.
+1. To generate the benchmarking executables, run `cargo bench --no-run`; this should output the paths to the executables.
+2. Self-sign an executable with the following:
+```zsh
+codesign -s - -v -f --entitlements =(echo -n '<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd"\>
+<plist version="1.0">
+    <dict>
+        <key>com.apple.security.get-task-allow</key>
+        <true/>
+    </dict>
+</plist>') <PATH_TO_EXECUTABLE>
+```
+3. Set the executable as the target in Instruments and begin a new recording.
+
 ## Additional Resources
 - [Performance profiling on Linux](https://rust-lang.github.io/packed_simd/perf-guide/prof/linux.html#performance-profiling-on-linux)
 - [`samply`](https://github.com/mstange/samply)
