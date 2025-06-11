@@ -43,7 +43,7 @@ pub fn decrypt_xsalsa20(
 /// Internal function for raw XSalsa20 encryption without nonce generation.
 /// Takes a 32-byte key and 24-byte nonce directly.
 /// Returns encrypted bytes or CryptoError if key/nonce lengths are invalid.
-pub(crate) fn encrypt_xsalsa20_raw_internal(
+pub fn encrypt_xsalsa20_raw_internal(
     key: &[u8],
     nonce: &[u8],
     plaintext: &[u8],
@@ -68,7 +68,7 @@ pub(crate) fn encrypt_xsalsa20_raw_internal(
 /// Internal function for raw XSalsa20 decryption without nonce generation.
 /// Takes a 32-byte key and 24-byte nonce directly.
 /// Returns decrypted bytes or CryptoError if key/nonce lengths are invalid.
-pub(crate) fn decrypt_xsalsa20_raw_internal(
+pub fn decrypt_xsalsa20_raw_internal(
     key: &[u8],
     nonce: &[u8],
     ciphertext: &[u8],
@@ -91,7 +91,7 @@ pub(crate) fn decrypt_xsalsa20_raw_internal(
 }
 
 /// XSalsa20-Poly1305 encryption
-pub(crate) fn encrypt_xsalsa20_poly1305(
+pub fn encrypt_xsalsa20_poly1305(
     key: &[u8],
     nonce: &[u8],
     plaintext: &[u8],
@@ -116,7 +116,7 @@ pub(crate) fn encrypt_xsalsa20_poly1305(
 }
 
 /// XSalsa20-Poly1305 decryption
-pub(crate) fn decrypt_xsalsa20_poly1305(
+pub fn decrypt_xsalsa20_poly1305(
     key: &[u8],
     nonce: &[u8],
     ciphertext: &[u8],
@@ -220,7 +220,6 @@ mod tests {
 
     #[test]
     fn test_xsalsa20_poly1305() {
-        // Test vectors from https://github.com/jedisct1/libsodium/blob/master/test/default/secretbox_test_vectors.h
         let key = [0u8; 32]; // All zeros key
         let nonce = [0u8; 24]; // All zeros nonce
         let plaintext = b"Hello, World!";
