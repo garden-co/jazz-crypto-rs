@@ -18,11 +18,11 @@ mod tests {
         let encrypt_decrypt =
             |plaintext: &[u8], key_secret: &str, nonce_material: &[u8]| -> Result<(), JsError> {
                 // Test encryption
-                let ciphertext = encrypt_internal(plaintext, key_secret, nonce_material)?;
+                let ciphertext = encrypt(plaintext, key_secret, nonce_material)?;
                 assert!(!ciphertext.is_empty());
 
                 // Test decryption
-                let decrypted = decrypt_internal(&ciphertext, key_secret, nonce_material)?;
+                let decrypted = decrypt(&ciphertext, key_secret, nonce_material)?;
                 assert_eq!(&*decrypted, plaintext);
                 Ok(())
             };

@@ -61,7 +61,7 @@ pub fn x25519_diffie_hellman(private_key: &[u8], public_key: &[u8]) -> Result<Ve
 /// Internal function to derive a sealer ID from a sealer secret.
 /// Takes a base58-encoded sealer secret with "sealerSecret_z" prefix.
 /// Returns a base58-encoded sealer ID with "sealer_z" prefix or error string if format is invalid.
-pub(crate) fn get_sealer_id_internal(secret: &str) -> Result<String, CryptoError> {
+pub fn get_sealer_id_internal(secret: &str) -> Result<String, CryptoError> {
     let private_bytes = bs58::decode(secret.strip_prefix("sealerSecret_z").ok_or(
         CryptoError::InvalidPrefix("sealerSecret_z", "sealer secret"),
     )?)

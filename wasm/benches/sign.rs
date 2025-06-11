@@ -23,7 +23,7 @@ mod tests {
             let secret = format!("signerSecret_z{}", bs58::encode(&signing_key).into_string());
 
             // Sign the message
-            let signature = sign_internal(message, &secret)?;
+            let signature = sign(message, &secret.as_bytes())?;
 
             // Get the public key for verification
             let secret_bytes =
@@ -33,7 +33,11 @@ mod tests {
             let signer_id = format!("signer_z{}", bs58::encode(&verifying_key).into_string());
 
             // Verify the signature
-            assert!(verify_internal(&signature, message, &signer_id)?);
+            assert!(verify(
+                &signature.as_bytes(),
+                message,
+                &signer_id.as_bytes()
+            )?);
             Ok(())
         };
         b.iter(|| {
@@ -136,11 +140,11 @@ mod tests {
             let secret = format!("signerSecret_z{}", bs58::encode(&signing_key).into_string());
 
             // Get signer ID
-            let signer_id = get_signer_id_internal(&secret)?;
+            let signer_id = get_signer_id(&secret.as_bytes())?;
             assert!(signer_id.starts_with("signer_z"));
 
             // Test that same secret produces same ID
-            let signer_id2 = get_signer_id_internal(&secret)?;
+            let signer_id2 = get_signer_id(&secret.as_bytes())?;
             assert_eq!(signer_id, signer_id2);
 
             // Test invalid secret format
