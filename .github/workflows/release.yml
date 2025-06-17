@@ -22,6 +22,13 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v3
 
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+          cache-workspaces: "./wasm -> target"
+
       - name: Enable latestcorepack
         run: |
           echo "Before: corepack version => $(corepack --version || echo 'not installed')"
@@ -33,8 +40,8 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.node-version'
-          cache: 'pnpm'
+          node-version-file: ".node-version"
+          cache: "pnpm"
 
       - name: Get pnpm store directory
         shell: bash
