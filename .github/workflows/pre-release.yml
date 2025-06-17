@@ -12,6 +12,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
       - name: Enable latestcorepack
         run: |
           echo "Before: corepack version => $(corepack --version || echo 'not installed')"
@@ -19,12 +25,6 @@ jobs:
           echo "After : corepack version => $(corepack --version)"
           corepack enable
           pnpm --version
-
-      - name: Setup Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: stable
-          components: rustfmt, clippy
 
       - name: Install dependencies
         run: pnpm install
