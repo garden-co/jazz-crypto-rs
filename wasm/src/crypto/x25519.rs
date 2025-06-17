@@ -18,7 +18,7 @@ pub fn new_x25519_private_key() -> Vec<u8> {
 pub(crate) fn x25519_public_key_internal(private_key: &[u8]) -> Result<[u8; 32], CryptoError> {
     let bytes: [u8; 32] = private_key
         .try_into()
-        .map_err(|_| CryptoError::InvalidKeyLength)?;
+        .map_err(|_| CryptoError::InvalidKeyLength(32, private_key.len()))?;
     let secret = StaticSecret::from(bytes);
     Ok(PublicKey::from(&secret).to_bytes())
 }
@@ -40,10 +40,10 @@ pub(crate) fn x25519_diffie_hellman_internal(
 ) -> Result<[u8; 32], CryptoError> {
     let private_bytes: [u8; 32] = private_key
         .try_into()
-        .map_err(|_| CryptoError::InvalidKeyLength)?;
+        .map_err(|_| CryptoError::InvalidKeyLength(32, private_key.len()))?;
     let public_bytes: [u8; 32] = public_key
         .try_into()
-        .map_err(|_| CryptoError::InvalidKeyLength)?;
+        .map_err(|_| CryptoError::InvalidKeyLength(32, public_key.len()))?;
     let secret = StaticSecret::from(private_bytes);
     let public = PublicKey::from(public_bytes);
     Ok(secret.diffie_hellman(&public).to_bytes())
@@ -61,7 +61,7 @@ pub fn x25519_diffie_hellman(private_key: &[u8], public_key: &[u8]) -> Result<Ve
 /// Internal function to derive a sealer ID from a sealer secret.
 /// Takes a base58-encoded sealer secret with "sealerSecret_z" prefix.
 /// Returns a base58-encoded sealer ID with "sealer_z" prefix or error string if format is invalid.
-pub(crate) fn get_sealer_id_internal(secret: &str) -> Result<String, CryptoError> {
+pub fn get_sealer_id_internal(secret: &str) -> Result<String, CryptoError> {
     let private_bytes = bs58::decode(secret.strip_prefix("sealerSecret_z").ok_or(
         CryptoError::InvalidPrefix("sealerSecret_z", "sealer secret"),
     )?)

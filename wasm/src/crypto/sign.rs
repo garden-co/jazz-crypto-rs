@@ -9,9 +9,9 @@ use wasm_bindgen::prelude::*;
 /// - `message`: Raw bytes to sign
 /// - `secret`: Base58-encoded signing key with "signerSecret_z" prefix
 /// Returns base58-encoded signature with "signature_z" prefix or error string.
-pub(crate) fn sign_internal(message: &[u8], secret: &str) -> Result<String, CryptoError> {
+pub fn sign_internal(message: &[u8], secret: &str) -> Result<String, CryptoError> {
     let secret_bytes = bs58::decode(secret.strip_prefix("signerSecret_z").ok_or(
-        CryptoError::InvalidPrefix("signerSecret_z", "signer secret"),
+        CryptoError::InvalidPrefix("signer secret", "signerSecret_z"),
     )?)
     .into_vec()
     .map_err(|e| CryptoError::Base58Error(e.to_string()))?;
@@ -29,11 +29,7 @@ pub(crate) fn sign_internal(message: &[u8], secret: &str) -> Result<String, Cryp
 /// - `message`: Raw bytes that were signed
 /// - `id`: Base58-encoded verifying key with "signer_z" prefix
 /// Returns true if signature is valid, false otherwise, or error string if formats are invalid.
-pub(crate) fn verify_internal(
-    signature: &str,
-    message: &[u8],
-    id: &str,
-) -> Result<bool, CryptoError> {
+pub fn verify_internal(signature: &str, message: &[u8], id: &str) -> Result<bool, CryptoError> {
     let signature_bytes = bs58::decode(
         signature
             .strip_prefix("signature_z")
@@ -56,7 +52,7 @@ pub(crate) fn verify_internal(
 /// Internal function to derive a signer ID from a signing key.
 /// - `secret`: Base58-encoded signing key with "signerSecret_z" prefix
 /// Returns base58-encoded verifying key with "signer_z" prefix or error string.
-pub(crate) fn get_signer_id_internal(secret: &str) -> Result<String, CryptoError> {
+pub fn get_signer_id_internal(secret: &str) -> Result<String, CryptoError> {
     let secret_bytes = bs58::decode(secret.strip_prefix("signerSecret_z").ok_or(
         CryptoError::InvalidPrefix("signerSecret_z", "signer secret"),
     )?)

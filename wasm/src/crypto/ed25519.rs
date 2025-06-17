@@ -18,7 +18,7 @@ pub fn new_ed25519_signing_key() -> Box<[u8]> {
 pub(crate) fn ed25519_verifying_key_internal(signing_key: &[u8]) -> Result<Box<[u8]>, CryptoError> {
     let key_bytes: [u8; 32] = signing_key
         .try_into()
-        .map_err(|_| CryptoError::InvalidKeyLength)?;
+        .map_err(|_| CryptoError::InvalidKeyLength(32, signing_key.len()))?;
     let signing_key = SigningKey::from_bytes(&key_bytes);
     Ok(signing_key.verifying_key().to_bytes().into())
 }
@@ -40,7 +40,7 @@ pub(crate) fn ed25519_sign_internal(
 ) -> Result<[u8; 64], CryptoError> {
     let key_bytes: [u8; 32] = signing_key
         .try_into()
-        .map_err(|_| CryptoError::InvalidKeyLength)?;
+        .map_err(|_| CryptoError::InvalidKeyLength(32, signing_key.len()))?;
     let signing_key = SigningKey::from_bytes(&key_bytes);
     Ok(signing_key.sign(message).to_bytes())
 }
@@ -66,7 +66,7 @@ pub(crate) fn ed25519_verify_internal(
 ) -> Result<bool, CryptoError> {
     let key_bytes: [u8; 32] = verifying_key
         .try_into()
-        .map_err(|_| CryptoError::InvalidKeyLength)?;
+        .map_err(|_| CryptoError::InvalidKeyLength(32, verifying_key.len()))?;
     let verifying_key = VerifyingKey::from_bytes(&key_bytes)
         .map_err(|e| CryptoError::InvalidVerifyingKey(e.to_string()))?;
 

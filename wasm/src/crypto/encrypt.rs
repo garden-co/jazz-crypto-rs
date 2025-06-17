@@ -6,7 +6,7 @@ use wasm_bindgen::prelude::*;
 /// Internal function to encrypt bytes with a key secret and nonce material.
 /// Takes a base58-encoded key secret with "keySecret_z" prefix and raw nonce material.
 /// Returns the encrypted bytes or a CryptoError if the key format is invalid.
-fn encrypt_internal(
+pub fn encrypt_internal(
     plaintext: &[u8],
     key_secret: &str,
     nonce_material: &[u8],
@@ -14,10 +14,10 @@ fn encrypt_internal(
     // Decode the base58 key secret (removing the "keySecret_z" prefix)
     let key_secret = key_secret
         .strip_prefix("keySecret_z")
-        .ok_or(CryptoError::InvalidKeyLength)?;
+        .ok_or(CryptoError::InvalidPrefix("key secret", "keySecret_z"))?;
     let key = bs58::decode(key_secret)
         .into_vec()
-        .map_err(|_| CryptoError::InvalidKeyLength)?;
+        .map_err(|e| CryptoError::Base58Error(e.to_string()))?;
 
     // Generate nonce from nonce material
     let nonce = generate_nonce(nonce_material);
@@ -29,7 +29,7 @@ fn encrypt_internal(
 /// Internal function to decrypt bytes with a key secret and nonce material.
 /// Takes a base58-encoded key secret with "keySecret_z" prefix and raw nonce material.
 /// Returns the decrypted bytes or a CryptoError if the key format is invalid.
-fn decrypt_internal(
+pub fn decrypt_internal(
     ciphertext: &[u8],
     key_secret: &str,
     nonce_material: &[u8],
@@ -37,10 +37,10 @@ fn decrypt_internal(
     // Decode the base58 key secret (removing the "keySecret_z" prefix)
     let key_secret = key_secret
         .strip_prefix("keySecret_z")
-        .ok_or(CryptoError::InvalidKeyLength)?;
+        .ok_or(CryptoError::InvalidPrefix("key secret", "keySecret_z"))?;
     let key = bs58::decode(key_secret)
         .into_vec()
-        .map_err(|_| CryptoError::InvalidKeyLength)?;
+        .map_err(|e| CryptoError::Base58Error(e.to_string()))?;
 
     // Generate nonce from nonce material
     let nonce = generate_nonce(nonce_material);

@@ -7,7 +7,7 @@ license = "MIT"
 repository = "https://github.com/garden-co/jazz"
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["console_error_panic_hook"]
@@ -38,6 +38,9 @@ strip = true
 
 [profile.dev]
 opt-level = 0
+debug = true
+
+[profile.bench]
 debug = true
 
 [package.metadata.wasm-pack.profile.profiling]
