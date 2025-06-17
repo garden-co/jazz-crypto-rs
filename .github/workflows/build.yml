@@ -10,7 +10,7 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Enable latestcorepack
         run: |
           echo "Before: corepack version => $(corepack --version || echo 'not installed')"
@@ -21,13 +21,14 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version-file: '.node-version'
-          cache: 'pnpm'
+          node-version-file: ".node-version"
+          cache: "pnpm"
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
           components: rustfmt, clippy
+          cache-workspaces: "./wasm -> target"
 
       - run: pnpm install
       - run: pnpm build

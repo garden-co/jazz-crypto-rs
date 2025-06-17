@@ -27,6 +27,7 @@ jobs:
         with:
           toolchain: stable
           components: rustfmt, clippy
+          cache-workspaces: "./wasm -> target"
 
       - name: Enable latestcorepack
         run: |
